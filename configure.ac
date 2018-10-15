@@ -69,12 +69,49 @@ AX_CHECK_COMPILE_FLAG([-fno-rounding-math],[CFLAGS="$CFLAGS -fno-rounding-math"]
 AX_CHECK_COMPILE_FLAG([-fno-signaling-nans],[CFLAGS="$CFLAGS -fno-signaling-nans"])
 AX_CHECK_COMPILE_FLAG([-fcx-limited-range],[CFLAGS="$CFLAGS -fcx-limited-range"])
 
+# adding the lib to the files to link
+LIBS="-lm"
+LIBS="-lpocketfft $LIBS"
+# introduce the optional configure parameter for a non-standard install prefix of XXX
+AC_ARG_WITH([pocketfft],
+    [AS_HELP_STRING([--with-pocketfft=prefix],
+        [try this for a non-standard install prefix of the pocketfft library])],
+    [POCKETFFTPATHSET=1],
+    [POCKETFFTPATHSET=0])
+
+# if optional parameter used, extend path flags for compliler and linker
+if test $POCKETFFTPATHSET = 1 ; then
+    # extend the compiler and linker flags according to the path set
+    AM_CFLAGS="$AM_CFLAGS -I$with_pocketfft/include"
+    AM_LDFLAGS="$AM_LDFLAGS -L$with_pocketfft/lib"
+fi
+
+##########################################################################
+# check for pocketfft
+##########################################################################
+OLD_CFLAGS=$CFLAGS;
+OLD_LDFLAGS=$LDFLAGS;
+CFLAGS="$AM_CFLAGS $CFLAGS"
+LDFLAGS="$AM_LDFLAGS $LDFLAGS"
+AC_CHECK_HEADERS([pocketfft/pocketfft.h],
+        [pocketfft_header_found=yes; break;])
+
+AS_IF([test "x$pocketfft_header_found" != "xyes"],
+        [AC_MSG_ERROR([Unable to find pocketfft header])])
+
+AC_SEARCH_LIBS([make_rfft_plan],[pocketfft],,AC_MSG_ERROR([pocketfft not found]))
+CFLAGS=$OLD_CFLAGS
+LDFLAGS=$OLD_LDFLAGS
+
 AC_PROG_LIBTOOL
 
 dnl
 dnl Create pkgconfig .pc file.
 dnl
 AX_CREATE_PKGCONFIG_INFO(,,,,[])
+AC_SUBST([LIBS])
+AC_SUBST([AM_CFLAGS])
+AC_SUBST([AM_LDFLAGS])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

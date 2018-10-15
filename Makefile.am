@@ -3,6 +3,8 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libsharp.la
 
 src_sharp = \
+  c_utils/c_utils.c \
+  c_utils/c_utils.h \
   libsharp/sharp.c \
   libsharp/sharp_almhelpers.c \
   libsharp/sharp_announce.c \
@@ -34,13 +36,13 @@ EXTRA_DIST = \
 
 libsharp_la_SOURCES = $(src_sharp)
 
-#check_PROGRAMS = ffttest
-#ffttest_SOURCES = ffttest.c
-#ffttest_LDADD = libpocketfft.la -lm
+check_PROGRAMS = sharp_testsuite
+sharp_testsuite_SOURCES = libsharp/sharp_testsuite.c c_utils/memusage.c c_utils/memusage.h c_utils/walltime_c.c c_utils/walltime_c.h
+sharp_testsuite_LDADD = libsharp.la
 
 #TESTS = ffttest
 
-AM_CFLAGS = -I$(top_srcdir)
+AM_CFLAGS = -I$(top_srcdir)/c_utils -I$(top_srcdir)/libsharp @AM_CFLAGS@
 
 pkgconfigdir = $(libdir)/pkgconfig
 nodist_pkgconfig_DATA = @PACKAGE_NAME@.pc
