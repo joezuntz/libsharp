@@ -30,7 +30,7 @@
  */
 
 #include <math.h>
-#include "ls_fft.h"
+#include "pocketfft/pocketfft.h"
 #include "sharp_ylmgen_c.h"
 #include "sharp_internal.h"
 #include "c_utils.h"
@@ -82,7 +82,7 @@ typedef struct
   double phi0_;
   dcmplx *shiftarr;
   int s_shift;
-  real_plan plan;
+  rfft_plan plan;
   int norot;
   } ringhelper;
 
@@ -94,7 +94,7 @@ static void ringhelper_init (ringhelper *self)
 
 static void ringhelper_destroy (ringhelper *self)
   {
-  if (self->plan) kill_real_plan(self->plan);
+  if (self->plan) destroy_rfft_plan(self->plan);
   DEALLOC(self->shiftarr);
   ringhelper_init(self);
   }
@@ -111,11 +111,11 @@ static void ringhelper_update (ringhelper *self, int nph, int mmax, double phi0)
       for (int m=0; m<=mmax; ++m)
         self->shiftarr[m] = cos(m*phi0) + _Complex_I*sin(m*phi0);
       }
-  if (!self->plan) self->plan=make_real_plan(nph);
-  if (nph!=(int)self->plan->length)
+  if (!self->plan) self->plan=make_rfft_plan(nph);
+  if (nph!=(int)rfft_length(self->plan))
     {
-    kill_real_plan(self->plan);
-    self->plan=make_real_plan(nph);
+    destroy_rfft_plan(self->plan);
+    self->plan=make_rfft_plan(nph);
     }
   }
 
@@ -323,7 +323,7 @@ static void ringhelper_phase2ring (ringhelper *self,
       }
     }
   data[1]=data[0];
-  real_plan_backward_fftpack (self->plan, &(data[1]));
+  rfft_backward (self->plan, &(data[1]), 1.);
   }
 
 static void ringhelper_ring2phase (ringhelper *self,
@@ -342,7 +342,7 @@ static void ringhelper_ring2phase (ringhelper *self,
   if (flags&SHARP_REAL_HARMONICS)
     wgt *= sqrt_two;
 
-  real_plan_forward_fftpack (self->plan, &(data[1]));
+  rfft_forward (self->plan, &(data[1]), 1.);
   data[0]=data[1];
   data[1]=data[nph+1]=0.;
 

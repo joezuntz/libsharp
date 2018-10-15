@@ -1,113 +1,80 @@
-AC_INIT(config/config.auto.in)
+AC_INIT([libsharp], [1.0.0])
+AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
+AM_MAINTAINER_MODE([enable])
 
-AC_CHECK_PROG([uname_found],[uname],[1],[0])
-if test $uname_found -eq 0 ; then
-    echo "No uname found; setting system type to unknown."
-    system="unknown"
-else
-    system=`uname -s`-`uname -r`
-fi
-AC_LANG([C])
+dnl
+dnl Needed for linking on Windows.
+dnl Protect with m4_ifdef because AM_PROG_AR is required in
+dnl autoconf >= 1.12 when using -Wall, but the macro is
+dnl absent in old versions of autoconf.
+dnl
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
-AC_TRY_COMPILE([], [@%:@ifndef __INTEL_COMPILER
-choke me
-@%:@endif], [ICC=[yes]], [ICC=[no]])
+LT_INIT
+AC_CONFIG_MACRO_DIR([m4])
 
-if test $ICC = yes; then GCC=no; fi
-CCTYPE=unknown
-if test $GCC = yes; then CCTYPE=gcc; fi
-if test $ICC = yes; then CCTYPE=icc; fi
-AC_OPENMP
+dnl
+dnl By default, install the headers into a subdirectory of
+dnl ${prefix}/include to avoid possible header filename collisions.
+dnl
+includedir="${includedir}/${PACKAGE_NAME}"
 
-SILENT_RULE=".SILENT:"
-AC_ARG_ENABLE(noisy-make,
-  [  --enable-noisy-make     enable detailed make output],
-  [if test "$enableval" = yes; then
-     SILENT_RULE=""
-   fi])
+dnl
+dnl Enable silent build rules if this version of Automake supports them
+dnl
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-ENABLE_MPI=no
-AC_ARG_ENABLE(mpi,
-  [  --enable-mpi            enable generation of MPI-parallel code],
-  [if test "$enableval" = yes; then
-     ENABLE_MPI=yes
-   fi])
+AC_DEFUN([AX_CHECK_COMPILE_FLAG],
+[AS_VAR_PUSHDEF([CACHEVAR],[ax_cv_check_[]_AC_LANG_ABBREV[]flags_$4_$1])dnl
+AC_CACHE_CHECK([whether _AC_LANG compiler accepts $1], CACHEVAR, [
+  ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
+  _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS $4 $1"
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM()],
+    [AS_VAR_SET(CACHEVAR,[yes])],
+    [AS_VAR_SET(CACHEVAR,[no])])
+  _AC_LANG_PREFIX[]FLAGS=$ax_check_save_flags])
+AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],
+  [m4_default([$2], :)],
+  [m4_default([$3], :)])
+AS_VAR_POPDEF([CACHEVAR])dnl
+])dnl AX_CHECK_COMPILE_FLAGS
 
-ENABLE_DEBUG=no
-AC_ARG_ENABLE(debug,
-  [  --enable-debug          enable generation of debugging symbols],
-  [if test "$enableval" = yes; then
-     ENABLE_DEBUG=yes
-   fi])
+dnl
+dnl Introduce --enable-native-optimizations command line argument to turn on
+dnl -march=native compiler flag, disabled by default.
+dnl
+AC_ARG_ENABLE(
+    [native-optimizations],
+    [AS_HELP_STRING([--enable-native-optimizations], [Enable non-portable optimizations for your own CPU by compiling with -march=native @<:@default=no@:>@])]
+)
 
-ENABLE_PIC=no
-AC_ARG_ENABLE(pic,
-  [  --enable-pic            enable generation of position independent code],
-  [if test "$enableval" = yes; then
-     ENABLE_PIC=yes
-   fi])
+AC_PROG_CC_C99
+AS_IF(
+    [test "x$enable_native_optimizations" = "xyes"],
+    [AX_CHECK_COMPILE_FLAG([-march=native],[CC="$CC -march=native"])],
+    dnl
+    dnl FIXME: On GCC 4.4, we hit an internal compiler error unless either
+    dnl -march=native or -fno-tree-fre is specified.
+    dnl
+    [
+        AS_IF(
+            [test "x$GCC" = "xyes" -a "x`$CC -dumpversion | cut -d. -f1,2`" = "x4.4"],
+            [AX_CHECK_COMPILE_FLAG([-fno-tree-fre], [CFLAGS="$CFLAGS -fno-tree-fre"])]
+        )
+    ]
+)
+AX_CHECK_COMPILE_FLAG([-fno-math-errno],[CFLAGS="$CFLAGS -fno-math-errno"])
+AX_CHECK_COMPILE_FLAG([-fno-trapping-math],[CFLAGS="$CFLAGS -fno-trapping-math"])
+AX_CHECK_COMPILE_FLAG([-fno-rounding-math],[CFLAGS="$CFLAGS -fno-rounding-math"])
+AX_CHECK_COMPILE_FLAG([-fno-signaling-nans],[CFLAGS="$CFLAGS -fno-signaling-nans"])
+AX_CHECK_COMPILE_FLAG([-fcx-limited-range],[CFLAGS="$CFLAGS -fcx-limited-range"])
 
-case $CCTYPE in
-  gcc)
-    CCFLAGS="-O3 -fno-tree-vectorize -ffast-math -fomit-frame-pointer -std=c99 -pedantic -Wextra -Wall -Wno-unknown-pragmas -Wshadow -Wmissing-prototypes -Wfatal-errors"
-    GCCVERSION="`$CC -dumpversion 2>&1`"
-    echo "Using gcc version $GCCVERSION"
-    AC_SUBST(GCCVERSION)
-    changequote(,)
-    gcc43=`echo $GCCVERSION | grep -c '^4\.[3456789]'`
-    gcc44=`echo $GCCVERSION | grep -c '^4\.4'`
-    changequote([,])
-    if test $gcc43 -gt 0; then
-      CCFLAGS="$CCFLAGS -march=native"
-    fi
-    if test $gcc44 -gt 0; then
-      CCFLAGS="$CCFLAGS -fno-tree-fre"
-    fi
-    ;;
-  icc)
-    CCFLAGS="-O3 -xHOST -std=c99 -ip -Wbrief -Wall -vec-report0 -openmp-report0 -wd383,981,1419,1572"
-    ;;
-  *)
-    CCFLAGS="-O2"
-    # Don't do anything now
-    ;;
-esac
+AC_PROG_LIBTOOL
 
-case $system in
-  Darwin-*)
-    ARCREATE="libtool -static -o"
-    ;;
-  *)
-    ARCREATE="ar cr"
-    ;;
-esac
+dnl
+dnl Create pkgconfig .pc file.
+dnl
+AX_CREATE_PKGCONFIG_INFO(,,,,[])
 
-if test $ENABLE_DEBUG = yes; then
-  DEBUG_CFLAGS="-g"
-fi
-
-if test $ENABLE_PIC = yes; then
-  PIC_CFLAGS="-fPIC"
-fi
-
-if test $ENABLE_MPI = yes; then
-  MPI_CFLAGS="-DUSE_MPI"
-fi
-
-CCFLAGS="$CCFLAGS $DEBUG_CFLAGS $OPENMP_CFLAGS $PIC_CFLAGS $MPI_CFLAGS"
-
-CCFLAGS_NO_C="$CCFLAGS $CPPFLAGS"
-
-LDCCFLAGS="$LDFLAGS $CCFLAGS"
-
-AC_SUBST(SILENT_RULE)
-AC_SUBST(CC)
-AC_SUBST(CCFLAGS_NO_C)
-AC_SUBST(LDCCFLAGS)
-AC_SUBST(DEBUG_CFLAGS)
-AC_SUBST(MPI_CFLAGS)
-AC_SUBST(OPENMP_CFLAGS)
-AC_SUBST(PIC_CFLAGS)
-AC_SUBST(ARCREATE)
-
-AC_OUTPUT(config/config.auto)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
