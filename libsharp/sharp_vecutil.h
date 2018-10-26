@@ -46,12 +46,6 @@
 
 #endif
 
-#if (VLEN==1)
-#define VLEN_s 1
-#else
-#define VLEN_s (2*VLEN)
-#endif
-
 #ifndef USE_FMA4
 #ifdef __FMA4__
 #define USE_FMA4 1

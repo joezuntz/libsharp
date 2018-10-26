@@ -2,6 +2,8 @@ AC_INIT([libsharp], [1.0.0])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AM_MAINTAINER_MODE([enable])
 
+AC_OPENMP
+
 dnl
 dnl Needed for linking on Windows.
 dnl Protect with m4_ifdef because AM_PROG_AR is required in
@@ -68,40 +70,10 @@ AX_CHECK_COMPILE_FLAG([-fno-trapping-math],[CFLAGS="$CFLAGS -fno-trapping-math"]
 AX_CHECK_COMPILE_FLAG([-fno-rounding-math],[CFLAGS="$CFLAGS -fno-rounding-math"])
 AX_CHECK_COMPILE_FLAG([-fno-signaling-nans],[CFLAGS="$CFLAGS -fno-signaling-nans"])
 AX_CHECK_COMPILE_FLAG([-fcx-limited-range],[CFLAGS="$CFLAGS -fcx-limited-range"])
+CFLAGS="$CFLAGS $OPENMP_CFLAGS"
 
 # adding the lib to the files to link
 LIBS="-lm"
-LIBS="-lpocketfft $LIBS"
-# introduce the optional configure parameter for a non-standard install prefix of XXX
-AC_ARG_WITH([pocketfft],
-    [AS_HELP_STRING([--with-pocketfft=prefix],
-        [try this for a non-standard install prefix of the pocketfft library])],
-    [POCKETFFTPATHSET=1],
-    [POCKETFFTPATHSET=0])
-
-# if optional parameter used, extend path flags for compliler and linker
-if test $POCKETFFTPATHSET = 1 ; then
-    # extend the compiler and linker flags according to the path set
-    AM_CFLAGS="$AM_CFLAGS -I$with_pocketfft/include"
-    AM_LDFLAGS="$AM_LDFLAGS -L$with_pocketfft/lib"
-fi
-
-##########################################################################
-# check for pocketfft
-##########################################################################
-OLD_CFLAGS=$CFLAGS;
-OLD_LDFLAGS=$LDFLAGS;
-CFLAGS="$AM_CFLAGS $CFLAGS"
-LDFLAGS="$AM_LDFLAGS $LDFLAGS"
-AC_CHECK_HEADERS([pocketfft/pocketfft.h],
-        [pocketfft_header_found=yes; break;])
-
-AS_IF([test "x$pocketfft_header_found" != "xyes"],
-        [AC_MSG_ERROR([Unable to find pocketfft header])])
-
-AC_SEARCH_LIBS([make_rfft_plan],[pocketfft],,AC_MSG_ERROR([pocketfft not found]))
-CFLAGS=$OLD_CFLAGS
-LDFLAGS=$OLD_LDFLAGS
 
 AC_PROG_LIBTOOL
 
