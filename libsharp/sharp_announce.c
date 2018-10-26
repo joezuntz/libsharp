@@ -40,7 +40,7 @@
 #endif
 
 #include "sharp_announce.h"
-#include "sharp_vecutil.h"
+#include "sharp_core.h"
 
 static void OpenMP_status(void)
   {
@@ -70,7 +70,7 @@ static void MPI_status(void)
   }
 
 static void vecmath_status(void)
-  { printf("Supported vector length: %d\n",VLEN); }
+  { printf("Supported vector length: %d\n",sharp_veclen()); }
 
 void sharp_announce (const char *name)
   {
