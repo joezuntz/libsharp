@@ -25,7 +25,7 @@
 /*! \file sharp_geomhelpers.c
  *  Spherical transform library
  *
- *  Copyright (C) 2006-2018 Max-Planck-Society<br>
+ *  Copyright (C) 2006-2018 Max-Planck-Society
  *  \author Martin Reinecke
  */
 
