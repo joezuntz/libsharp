@@ -62,7 +62,6 @@ extern "C" {
     \a alm arrays. All \c m values from 0 to some \c mmax<=lmax must be present
     exactly once in the union of all \a alm_info objects over the participating
     MPI tasks.
-  \param ntrans the number of simultaneous SHTs
   \param flags See sharp_jobflags. In particular, if SHARP_DP is set, then
     \a alm is expected to have the type "complex double **" and \a map is
     expected to have the type "double **"; otherwise, the expected
@@ -73,7 +72,7 @@ extern "C" {
     operation count for this SHT will be written here. */
 void sharp_execute_mpi (MPI_Comm comm, sharp_jobtype type, int spin,
   void *alm, void *map, const sharp_geom_info *geom_info,
-  const sharp_alm_info *alm_info, int ntrans, int flags, double *time,
+  const sharp_alm_info *alm_info, int flags, double *time,
   unsigned long long *opcnt);
 
 #ifdef __cplusplus

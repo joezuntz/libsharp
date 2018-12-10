@@ -55,12 +55,11 @@ typedef struct
   const sharp_geom_info *ginfo;
   const sharp_alm_info *ainfo;
   double time;
-  int ntrans;
   unsigned long long opcnt;
   } sharp_job;
 
 int sharp_get_nv_max (void);
-int sharp_nv_oracle (sharp_jobtype type, int spin, int ntrans);
+int sharp_nv_oracle (sharp_jobtype type, int spin);
 int sharp_get_mlim (int lmax, int spin, double sth, double cth);
 
 #endif

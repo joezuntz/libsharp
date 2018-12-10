@@ -1,9 +1,11 @@
-*.o
-*.so
-#*
-*~
-*.pyc
-*.pyo
+**.o
+**.lo
+**.la
+**.so
+**/#*
+**~
+**.pyc
+**.pyo
 
 /auto
 /autom4te.cache
