@@ -41,13 +41,16 @@ if (njobs>1)
     Tb lam_3, lam_4;
     Tv r0=vload(rf[l].f[0]),r1=vload(rf[l].f[1]);
     for (int i=0; i<nvec; ++i)
-      lam_3.v[i] = vsub(vmul(vmul(cth.v[i],lam_2.v[i]),r0),vmul(lam_1.v[i],r1));
+//      lam_3.v[i] = vsub(vmul(vmul(cth.v[i],lam_2.v[i]),r0),vmul(lam_1.v[i],r1));
+      lam_3.v[i] = vabmc(vmul(cth.v[i],lam_2.v[i]),r0,vmul(lam_1.v[i],r1));
     r0=vload(rf[l+1].f[0]);r1=vload(rf[l+1].f[1]);
     for (int i=0; i<nvec; ++i)
-      lam_4.v[i] = vsub(vmul(vmul(cth.v[i],lam_3.v[i]),r0),vmul(lam_2.v[i],r1));
+//      lam_4.v[i] = vsub(vmul(vmul(cth.v[i],lam_3.v[i]),r0),vmul(lam_2.v[i],r1));
+      lam_4.v[i] = vabmc(vmul(cth.v[i],lam_3.v[i]),r0,vmul(lam_2.v[i],r1));
     r0=vload(rf[l+2].f[0]);r1=vload(rf[l+2].f[1]);
     for (int i=0; i<nvec; ++i)
-      lam_1.v[i] = vsub(vmul(vmul(cth.v[i],lam_4.v[i]),r0),vmul(lam_3.v[i],r1));
+//      lam_1.v[i] = vsub(vmul(vmul(cth.v[i],lam_4.v[i]),r0),vmul(lam_3.v[i],r1));
+      lam_1.v[i] = vabmc(vmul(cth.v[i],lam_4.v[i]),r0,vmul(lam_3.v[i],r1));
     for (int j=0; j<njobs; ++j)
       {
       Tv ar2=vload(creal(alm[njobs*l+j])),
@@ -71,7 +74,8 @@ if (njobs>1)
       }
     r0=vload(rf[l+3].f[0]);r1=vload(rf[l+3].f[1]);
     for (int i=0; i<nvec; ++i)
-      lam_2.v[i] = vsub(vmul(vmul(cth.v[i],lam_1.v[i]),r0),vmul(lam_4.v[i],r1));
+//      lam_2.v[i] = vsub(vmul(vmul(cth.v[i],lam_1.v[i]),r0),vmul(lam_4.v[i],r1));
+      lam_2.v[i] = vabmc(vmul(cth.v[i],lam_1.v[i]),r0,vmul(lam_4.v[i],r1));
     l+=4;
     }
   }
@@ -127,13 +131,15 @@ NOINLINE static void Z(map2alm_kernel) (const Tb cth,
   while (l<lmax)
     {
     for (int i=0; i<nvec; ++i)
-      lam_1.v[i] = vload(rf[l].f[0])*(cth.v[i]*lam_2.v[i])
-                 - vload(rf[l].f[1])*lam_1.v[i];
+      lam_1.v[i] = vabmc(vload(rf[l].f[0]),vmul(cth.v[i],lam_2.v[i]),
+                   vmul(vload(rf[l].f[1]),lam_1.v[i]));
     for (int j=0; j<njobs; ++j)
       for (int i=0; i<nvec; ++i)
         {
-        atmp[2*(l*njobs+j)]+=lam_2.v[i]*p1[j].r.v[i];
-        atmp[2*(l*njobs+j)+1]+=lam_2.v[i]*p1[j].i.v[i];
+        vfmaeq(atmp[2*(l*njobs+j)],lam_2.v[i],p1[j].r.v[i]);
+        vfmaeq(atmp[2*(l*njobs+j)+1],lam_2.v[i],p1[j].i.v[i]);
+//        atmp[2*(l*njobs+j)]+=lam_2.v[i]*p1[j].r.v[i];
+//        atmp[2*(l*njobs+j)+1]+=lam_2.v[i]*p1[j].i.v[i];
         }
     for (int i=0; i<nvec; ++i)
       lam_2.v[i] = vload(rf[l+1].f[0])*(cth.v[i]*lam_1.v[i])
@@ -141,8 +147,10 @@ NOINLINE static void Z(map2alm_kernel) (const Tb cth,
     for (int j=0; j<njobs; ++j)
       for (int i=0; i<nvec; ++i)
         {
-        atmp[2*((l+1)*njobs+j)]+=lam_1.v[i]*p2[j].r.v[i];
-        atmp[2*((l+1)*njobs+j)+1]+=lam_1.v[i]*p2[j].i.v[i];
+        vfmaeq(atmp[2*((l+1)*njobs+j)],lam_1.v[i],p2[j].r.v[i]);
+        vfmaeq(atmp[2*((l+1)*njobs+j)+1],lam_1.v[i],p2[j].i.v[i]);
+//        atmp[2*((l+1)*njobs+j)]+=lam_1.v[i]*p2[j].r.v[i];
+//        atmp[2*((l+1)*njobs+j)+1]+=lam_1.v[i]*p2[j].i.v[i];
         }
     l+=2;
     }

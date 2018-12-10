@@ -58,6 +58,7 @@ typedef int Tm;
 #define vfmaeq(a,b,c) ((a)+=(b)*(c))
 #define vfmaeq_s(a,b,c) ((a)+=(b)*(c))
 #define vfmseq(a,b,c) ((a)-=(b)*(c))
+#define vabmc(a,b,c) ((a)*(b)-(c))
 #define vfmaaeq(a,b,c,d,e) ((a)+=(b)*(c)+(d)*(e))
 #define vfmaseq(a,b,c,d,e) ((a)+=(b)*(c)-(d)*(e))
 #define vneg(a) (-(a))
@@ -125,6 +126,7 @@ static inline Tv vblend__(Tv m, Tv a, Tv b)
 #define vfmaeq(a,b,c) a=_mm_add_pd(a,_mm_mul_pd(b,c))
 #define vfmaeq_s(a,b,c) a=_mm_add_ps(a,_mm_mul_ps(b,c))
 #define vfmseq(a,b,c) a=_mm_sub_pd(a,_mm_mul_pd(b,c))
+#define vabmc(a,b,c) _mm_sub_pd(_mm_mul_pd(a,b),c)
 #define vfmaaeq(a,b,c,d,e) \
   a=_mm_add_pd(a,_mm_add_pd(_mm_mul_pd(b,c),_mm_mul_pd(d,e)))
 #define vfmaseq(a,b,c,d,e) \
@@ -182,6 +184,7 @@ typedef __m256d Tm;
 #define vfmaeq(a,b,c) a=_mm256_macc_pd(b,c,a)
 #define vfmaeq_s(a,b,c) a=_mm256_macc_ps(b,c,a)
 #define vfmseq(a,b,c) a=_mm256_nmacc_pd(b,c,a)
+#define vabmc(a,b,c) _mm256_msub_pd(a,b,c)
 #define vfmaaeq(a,b,c,d,e) a=_mm256_macc_pd(d,e,_mm256_macc_pd(b,c,a))
 #define vfmaseq(a,b,c,d,e) a=_mm256_nmacc_pd(d,e,_mm256_macc_pd(b,c,a))
 #else
@@ -189,12 +192,14 @@ typedef __m256d Tm;
 #define vfmaeq(a,b,c) a=_mm256_fmadd_pd(b,c,a)
 #define vfmaeq_s(a,b,c) a=_mm256_fmadd_ps(b,c,a)
 #define vfmseq(a,b,c) a=_mm256_fnmadd_pd(b,c,a)
+#define vabmc(a,b,c) _mm256_fmsub_pd(a,b,c)
 #define vfmaaeq(a,b,c,d,e) a=_mm256_fmadd_pd(d,e,_mm256_fmadd_pd(b,c,a))
 #define vfmaseq(a,b,c,d,e) a=_mm256_fnmadd_pd(d,e,_mm256_fmadd_pd(b,c,a))
 #else
 #define vfmaeq(a,b,c) a=_mm256_add_pd(a,_mm256_mul_pd(b,c))
 #define vfmaeq_s(a,b,c) a=_mm256_add_ps(a,_mm256_mul_ps(b,c))
 #define vfmseq(a,b,c) a=_mm256_sub_pd(a,_mm256_mul_pd(b,c))
+#define vabmc(a,b,c) _mm256_sub_pd(_mm256_mul_pd(a,b),c)
 #define vfmaaeq(a,b,c,d,e) \
   a=_mm256_add_pd(a,_mm256_add_pd(_mm256_mul_pd(b,c),_mm256_mul_pd(d,e)))
 #define vfmaseq(a,b,c,d,e) \
@@ -241,7 +246,8 @@ typedef __mmask8 Tm;
 #define vmuleq(a,b) a=_mm512_mul_pd(a,b)
 #define vmuleq_mask(mask,a,b) a=_mm512_mask_mul_pd(a,mask,a,b);
 #define vfmaeq(a,b,c) a=_mm512_fmadd_pd(b,c,a)
-#define vfmseq(a,b,c) a=_mm512_fnmadd_pd(b,c,a)
+//#define vabmc(a,b,c) a=_mm512_fnmadd_pd(b,c,a)
+//#define vfms(a,b,c) _mm512_fnmadd_pd(b,c,a)
 #define vfmaaeq(a,b,c,d,e) a=_mm512_fmadd_pd(d,e,_mm512_fmadd_pd(b,c,a))
 #define vfmaseq(a,b,c,d,e) a=_mm512_fnmadd_pd(d,e,_mm512_fmadd_pd(b,c,a))
 #define vneg(a) _mm512_mul_pd(a,_mm512_set1_pd(-1.))
