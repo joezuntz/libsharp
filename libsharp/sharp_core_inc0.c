@@ -82,22 +82,22 @@ void CONCATX(inner_loop,ARCH) (sharp_job *job, const int *ispair,const double *c
   switch (nv)
     {
     case 0x1:
-      CONCAT3(inner_loop,1,1) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
+      CONCAT2(inner_loop,1) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
       return;
     case 0x2:
-      CONCAT3(inner_loop,2,1) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
+      CONCAT2(inner_loop,2) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
       return;
     case 0x3:
-      CONCAT3(inner_loop,3,1) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
+      CONCAT2(inner_loop,3) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
       return;
     case 0x4:
-      CONCAT3(inner_loop,4,1) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
+      CONCAT2(inner_loop,4) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
       return;
     case 0x5:
-      CONCAT3(inner_loop,5,1) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
+      CONCAT2(inner_loop,5) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
       return;
     case 0x6:
-      CONCAT3(inner_loop,6,1) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
+      CONCAT2(inner_loop,6) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
       return;
     }
   UTIL_FAIL("Incorrect vector parameters");
