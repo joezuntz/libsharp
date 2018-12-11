@@ -34,9 +34,7 @@ include_HEADERS = \
 
 EXTRA_DIST = \
   libsharp/sharp_core_inc0.c \
-  libsharp/sharp_core_inc.c \
-  libsharp/sharp_core_inc2.c \
-  libsharp/sharp_core_inchelper.c
+  libsharp/sharp_core_inc.c
 
 libsharp_la_SOURCES = $(src_sharp)
 
