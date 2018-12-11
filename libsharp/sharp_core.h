@@ -44,6 +44,7 @@ void inner_loop (sharp_job *job, const int *ispair,const double *cth,
   const int *mlim);
 
 int sharp_veclen(void);
+int sharp_max_nvec(void);
 
 #ifdef __cplusplus
 }

@@ -44,7 +44,6 @@
 #include "c_utils.h"
 #include "sharp_announce.h"
 #include "memusage.h"
-#include "sharp_vecsupport.h"
 
 typedef complex double dcmplx;
 
@@ -597,7 +596,7 @@ static void sharp_test (int argc, const char **argv)
   if (mytask==0)
     printf("%-12s %-10s %2d %d %2d %3d %6d %6d %6d %6d %2d %.2e %7.2f %.2e %7.2f"
            " %9.2f %6.2f %.2e %.2e\n",
-      getenv("HOST"),argv[2],spin,VLEN,nomp,ntasks,lmax,mmax,gpar1,gpar2,
+      getenv("HOST"),argv[2],spin,sharp_veclen(),nomp,ntasks,lmax,mmax,gpar1,gpar2,
       t_a2m,1e-9*op_a2m/t_a2m,t_m2a,1e-9*op_m2a/t_m2a,tmem/(1<<20),
       100.*(1.-iosize/tmem),maxerel,maxeabs);
 

@@ -11,7 +11,6 @@ src_sharp = \
   libsharp/sharp_almhelpers.c \
   libsharp/sharp_announce.c \
   libsharp/sharp_core.c \
-  libsharp/sharp_core_avx.c \
   libsharp/sharp_geomhelpers.c \
   libsharp/sharp_legendre_roots.c \
   libsharp/sharp_ylmgen_c.c \
@@ -31,10 +30,6 @@ include_HEADERS = \
   libsharp/sharp_geomhelpers.h \
   libsharp/sharp_almhelpers.h \
   libsharp/sharp_cxx.h
-
-EXTRA_DIST = \
-  libsharp/sharp_core_inc0.c \
-  libsharp/sharp_core_inc.c
 
 libsharp_la_SOURCES = $(src_sharp)
 

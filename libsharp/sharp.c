@@ -36,7 +36,6 @@
 #include "sharp_internal.h"
 #include "c_utils.h"
 #include "sharp_core.h"
-#include "sharp_vecutil.h"
 #include "walltime_c.h"
 #include "sharp_almhelpers.h"
 #include "sharp_geomhelpers.h"
@@ -854,7 +853,7 @@ NOINLINE static void sharp_execute_job (sharp_job *job)
   init_output (job);
 
   int nchunks, chunksize;
-  get_chunk_info(job->ginfo->npairs,6*VLEN,&nchunks,&chunksize);
+  get_chunk_info(job->ginfo->npairs,sharp_veclen()*sharp_max_nvec(),&nchunks,&chunksize);
 //FIXME: needs to be changed to "nm"
   alloc_phase (job,mmax+1,chunksize);
 
