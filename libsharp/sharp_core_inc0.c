@@ -42,21 +42,17 @@ typedef complex double dcmplx;
 
 #define XCONCATX(a,b) a##b
 #define CONCATX(a,b) XCONCATX(a,b)
-#define XCONCAT2(a,b) a##_##b
-#define CONCAT2(a,b) XCONCAT2(a,b)
 
 #define nvec 6
-#define Tb CONCAT2(Tb,nvec)
-#define Y(arg) CONCAT2(arg,nvec)
+#define Y(arg) arg
 #include "sharp_core_inc.c"
 
 #undef Y
-#undef Tb
 #undef nvec
 
 void CONCATX(inner_loop,ARCH) (sharp_job *job, const int *ispair,const double *cth,
   const double *sth, int llim, int ulim, sharp_Ylmgen_C *gen, int mi,
   const int *mlim)
   {
-  inner_loop_6(job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
+  inner_loop_(job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
   }
