@@ -515,7 +515,7 @@ static void dealloc_phase (sharp_job *job)
   { DEALLOC(job->phase); }
 
 static void alloc_almtmp (sharp_job *job, int lmax)
-  { job->almtmp=RALLOC(dcmplx,job->nalm*(lmax+1)); }
+  { job->almtmp=RALLOC(dcmplx,job->nalm*(lmax+2)); }
 
 static void dealloc_almtmp (sharp_job *job)
   { DEALLOC(job->almtmp); }
@@ -534,6 +534,8 @@ NOINLINE static void alm2almtmp (sharp_job *job, int lmax, int mi)
       source_t x = *(source_t *)(((real_t *)job->alm[i])+ofs+l*stride); \
       job->almtmp[job->nalm*l+i] = expr_of_x;   \
       }                                                     \
+  for (int i=0; i<job->nalm; ++i)             \
+    job->almtmp[job->nalm*(lmax+1)+i] = 0;           \
   }
 
   if (job->type!=SHARP_MAP2ALM)
@@ -852,8 +854,7 @@ NOINLINE static void sharp_execute_job (sharp_job *job)
   init_output (job);
 
   int nchunks, chunksize;
-  get_chunk_info(job->ginfo->npairs,(job->flags&SHARP_NVMAX)*VLEN,&nchunks,
-    &chunksize);
+  get_chunk_info(job->ginfo->npairs,6*VLEN,&nchunks,&chunksize);
 //FIXME: needs to be changed to "nm"
   alloc_phase (job,mmax+1,chunksize);
 
@@ -934,8 +935,6 @@ static void sharp_build_job_common (sharp_job *job, sharp_jobtype type,
   job->ginfo = geom_info;
   job->ainfo = alm_info;
   job->flags = flags;
-  if ((job->flags&SHARP_NVMAX)==0)
-    job->flags|=sharp_nv_oracle (type, spin);
   if (alm_info->flags&SHARP_REAL_HARMONICS)
     job->flags|=SHARP_REAL_HARMONICS;
   job->time = 0.;
@@ -964,75 +963,6 @@ void sharp_set_nchunks_max(int new_nchunks_max)
 
 int sharp_get_nv_max (void)
 { return 6; }
-
-static int sharp_oracle (sharp_jobtype type, int spin)
-  {
-  int lmax=511;
-  int mmax=(lmax+1)/2;
-  int nrings=(lmax+1)/4;
-  int ppring=1;
-
-  spin = (spin!=0) ? 2 : 0;
-
-  ptrdiff_t npix=(ptrdiff_t)nrings*ppring;
-  sharp_geom_info *tinfo;
-  sharp_make_gauss_geom_info (nrings, ppring, 0., 1, ppring, &tinfo);
-
-  ptrdiff_t nalms = ((mmax+1)*(mmax+2))/2 + (mmax+1)*(lmax-mmax);
-  int ncomp = (spin==0) ? 1 : 2;
-
-  double **map;
-  ALLOC2D(map,double,ncomp,npix);
-  SET_ARRAY(map[0],0,npix*ncomp,0.);
-
-  sharp_alm_info *alms;
-  sharp_make_triangular_alm_info(lmax,mmax,1,&alms);
-
-  dcmplx **alm;
-  ALLOC2D(alm,dcmplx,ncomp,nalms);
-  SET_ARRAY(alm[0],0,nalms*ncomp,0.);
-
-  double time=1e30;
-  int nvbest=-1;
-
-  for (int nv=1; nv<=sharp_get_nv_max(); ++nv)
-    {
-    double time_acc=0.;
-    double jtime;
-    int ntries=0;
-    do
-      {
-      sharp_execute(type,spin,&alm[0],&map[0],tinfo,alms,
-        nv|SHARP_DP|SHARP_NO_OPENMP,&jtime,NULL);
-
-      if (jtime<time) { time=jtime; nvbest=nv; }
-      time_acc+=jtime;
-      ++ntries;
-      }
-    while ((time_acc<0.02)&&(ntries<2));
-    }
-
-  DEALLOC2D(map);
-  DEALLOC2D(alm);
-
-  sharp_destroy_alm_info(alms);
-  sharp_destroy_geom_info(tinfo);
-  return nvbest;
-  }
-
-int sharp_nv_oracle (sharp_jobtype type, int spin)
-  {
-  static const int maxtr = 6;
-  static int nv_opt[2][5] = {{0,0,0,0,0},{0,0,0,0,0}};
-
-  if (type==SHARP_ALM2MAP_DERIV1) spin=1;
-  UTIL_ASSERT(type<5,"bad type");
-  UTIL_ASSERT(spin>=0, "bad spin");
-
-  if (nv_opt[spin!=0][type]==0)
-    nv_opt[spin!=0][type]=sharp_oracle(type,spin);
-  return nv_opt[spin!=0][type];
-  }
 
 #ifdef USE_MPI
 #include "sharp_mpi.c"

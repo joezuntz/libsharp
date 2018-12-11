@@ -34,42 +34,22 @@ NOINLINE static void Z(alm2map_kernel) (const Tb cth, Y(Tbri) * restrict p1,
   const sharp_ylmgen_dbl2 * restrict rf, const dcmplx * restrict alm,
   int l, int lmax)
   {
-  while (l<lmax)
+  while (l<=lmax)
     {
-    for (int i=0; i<nvec; ++i)
-      lam_1.v[i] = vload(rf[l].f[0])*(cth.v[i]*lam_2.v[i])
-                 - vload(rf[l].f[1])*lam_1.v[i];
-    {
-    Tv ar=vload(creal(alm[l])),
-       ai=vload(cimag(alm[l]));
+    Tv ar1=vload(creal(alm[l  ])), ai1=vload(cimag(alm[l  ]));
+    Tv ar2=vload(creal(alm[l+1])), ai2=vload(cimag(alm[l+1]));
+    Tv f10=vload(rf[l  ].f[0]), f11=vload(rf[l  ].f[1]),
+       f20=vload(rf[l+1].f[0]), f21=vload(rf[l+1].f[1]);
     for (int i=0; i<nvec; ++i)
       {
-      p1->r.v[i] += lam_2.v[i]*ar;
-      p1->i.v[i] += lam_2.v[i]*ai;
-      }
-    }
-    for (int i=0; i<nvec; ++i)
-      lam_2.v[i] = vload(rf[l+1].f[0])*(cth.v[i]*lam_1.v[i])
-                 - vload(rf[l+1].f[1])*lam_2.v[i];
-    {
-    Tv ar=vload(creal(alm[l+1])),
-       ai=vload(cimag(alm[l+1]));
-    for (int i=0; i<nvec; ++i)
-      {
-      p2->r.v[i] += lam_1.v[i]*ar;
-      p2->i.v[i] += lam_1.v[i]*ai;
-      }
+      lam_1.v[i] = f10*(cth.v[i]*lam_2.v[i]) - f11*lam_1.v[i];
+      p1->r.v[i] += lam_2.v[i]*ar1;
+      p1->i.v[i] += lam_2.v[i]*ai1;
+      lam_2.v[i] = f20*(cth.v[i]*lam_1.v[i]) - f21*lam_2.v[i];
+      p2->r.v[i] += lam_1.v[i]*ar2;
+      p2->i.v[i] += lam_1.v[i]*ai2;
       }
     l+=2;
-    }
-  if (l==lmax)
-    {
-    Tv ar=vload(creal(alm[l])),ai=vload(cimag(alm[l]));
-    for (int i=0; i<nvec; ++i)
-      {
-      p1->r.v[i] += lam_2.v[i]*ar;
-      p1->i.v[i] += lam_2.v[i]*ai;
-      }
     }
   }
 
@@ -77,32 +57,21 @@ NOINLINE static void Z(map2alm_kernel) (const Tb cth,
   const Y(Tbri) * restrict p1, const Y(Tbri) * restrict p2, Tb lam_1, Tb lam_2,
   const sharp_ylmgen_dbl2 * restrict rf, int l, int lmax, Tv *restrict atmp)
   {
-  while (l<lmax)
+  while (l<=lmax)
     {
-    for (int i=0; i<nvec; ++i)
-      lam_1.v[i] = vabmc(vload(rf[l].f[0]),vmul(cth.v[i],lam_2.v[i]),
-                   vmul(vload(rf[l].f[1]),lam_1.v[i]));
+    Tv f10=vload(rf[l  ].f[0]), f11=vload(rf[l  ].f[1]),
+       f20=vload(rf[l+1].f[0]), f21=vload(rf[l+1].f[1]);
     for (int i=0; i<nvec; ++i)
       {
+      lam_1.v[i] = f10*(cth.v[i]*lam_2.v[i]) - f11*lam_1.v[i];
       vfmaeq(atmp[2*l  ],lam_2.v[i],p1->r.v[i]);
       vfmaeq(atmp[2*l+1],lam_2.v[i],p1->i.v[i]);
-      }
-    for (int i=0; i<nvec; ++i)
-      lam_2.v[i] = vload(rf[l+1].f[0])*(cth.v[i]*lam_1.v[i])
-                 - vload(rf[l+1].f[1])*lam_2.v[i];
-    for (int i=0; i<nvec; ++i)
-      {
+      lam_2.v[i] = f20*(cth.v[i]*lam_1.v[i]) - f21*lam_2.v[i];
       vfmaeq(atmp[2*(l+1)  ],lam_1.v[i],p2->r.v[i]);
       vfmaeq(atmp[2*(l+1)+1],lam_1.v[i],p2->i.v[i]);
       }
     l+=2;
     }
-  if (l==lmax)
-    for (int i=0; i<nvec; ++i)
-      {
-      atmp[2*l  ] += lam_2.v[i]*p1->r.v[i];
-      atmp[2*l+1] += lam_2.v[i]*p1->i.v[i];
-      }
   }
 
 NOINLINE static void Z(calc_alm2map) (const Tb cth, const Tb sth,
@@ -187,10 +156,9 @@ NOINLINE static void Z(calc_map2alm) (const Tb cth, const Tb sth,
       }
     if (++l>lmax) return;
     for (int i=0; i<nvec; ++i)
+      {
       lam_1.v[i] = vload(rf[l-1].f[0])*(cth.v[i]*lam_2.v[i])
                  - vload(rf[l-1].f[1])*lam_1.v[i];
-    for (int i=0; i<nvec; ++i)
-      {
       Tv tmp=lam_1.v[i]*corfac.v[i];
       atmp[2*l  ]+=tmp*p2->r.v[i];
       atmp[2*l+1]+=tmp*p2->i.v[i];
@@ -222,9 +190,6 @@ static inline void Z(saddstep) (Y(Tbqu) * restrict px, Y(Tbqu) * restrict py,
     vfmaeq(px->qi.v[i],agi,lw);
     vfmaeq(px->ur.v[i],acr,lw);
     vfmaeq(px->ui.v[i],aci,lw);
-    }
-  for (int i=0; i<nvec; ++i)
-    {
     Tv lx=vsub(rxm.v[i],rxp.v[i]);
     vfmseq(py->qr.v[i],aci,lx);
     vfmaeq(py->qi.v[i],acr,lx);
@@ -249,9 +214,6 @@ static inline void Z(saddstepb) (Y(Tbqu) * restrict p1, Y(Tbqu) * restrict p2,
     vfmaaeq(p1->qi.v[i],agi1,lw1,acr2,lx2);
     vfmaaeq(p1->ur.v[i],acr1,lw1,agi2,lx2);
     vfmaseq(p1->ui.v[i],aci1,lw1,agr2,lx2);
-    }
-  for (int i=0; i<nvec; ++i)
-    {
     Tv lx1=r2m.v[i]-r2p.v[i];
     Tv lw2=r1p.v[i]+r1m.v[i];
     vfmaseq(p2->qr.v[i],agr2,lw2,aci1,lx1);
@@ -273,9 +235,6 @@ static inline void Z(saddstep2) (const Y(Tbqu) * restrict px,
     vfmaeq(agi,px->qi.v[i],lw);
     vfmaeq(acr,px->ur.v[i],lw);
     vfmaeq(aci,px->ui.v[i],lw);
-    }
-  for (int i=0; i<nvec; ++i)
-    {
     Tv lx=vsub(rxm->v[i],rxp->v[i]);
     vfmseq(agr,py->ui.v[i],lx);
     vfmaeq(agi,py->ur.v[i],lx);
@@ -444,9 +403,6 @@ static inline void Z(saddstep_d) (Y(Tbqu) * restrict px, Y(Tbqu) * restrict py,
     Tv lw=vadd(rxp.v[i],rxm.v[i]);
     vfmaeq(px->qr.v[i],ar,lw);
     vfmaeq(px->qi.v[i],ai,lw);
-    }
-  for (int i=0; i<nvec; ++i)
-    {
     Tv lx=vsub(rxm.v[i],rxp.v[i]);
     vfmaeq(py->ur.v[i],ai,lx);
     vfmseq(py->ui.v[i],ar,lx);
@@ -652,8 +608,8 @@ NOINLINE static void Z(inner_loop_m2a) (sharp_job *job, const int *ispair,
       {
       if (job->spin==0)
         {
-        Tv atmp[2*(gen->lmax+1)];
-        memset (&atmp[2*m],0,2*(gen->lmax+1-m)*sizeof(Tv));
+        Tv atmp[2*(gen->lmax+2)];
+        memset (&atmp[2*m],0,2*(gen->lmax+2-m)*sizeof(Tv));
         for (int ith=0; ith<ulim-llim; ith+=nval)
           {
           Y(Tburi) p1, p2; VZERO(p1); VZERO(p2);

@@ -69,7 +69,7 @@ void sharp_Ylmgen_init (sharp_Ylmgen_C *gen, int l_max, int m_max, int spin)
   gen->m = -1;
   if (spin==0)
     {
-    gen->rf = RALLOC(sharp_ylmgen_dbl2,gen->lmax+1);
+    gen->rf = RALLOC(sharp_ylmgen_dbl2,gen->lmax+2);
     gen->mfac = RALLOC(double,gen->mmax+1);
     gen->mfac[0] = inv_sqrt4pi;
     for (int m=1; m<=gen->mmax; ++m)
@@ -159,7 +159,7 @@ void sharp_Ylmgen_prepare (sharp_Ylmgen_C *gen, int m)
     {
     gen->rf[m].f[0] = gen->root[2*m+3];
     gen->rf[m].f[1] = 0.;
-    for (int l=m+1; l<=gen->lmax; ++l)
+    for (int l=m+1; l<=gen->lmax+1; ++l)
       {
       double tmp=gen->root[2*l+3]*gen->iroot[l+1+m]*gen->iroot[l+1-m];
       gen->rf[l].f[0] = tmp*gen->root[2*l+1];

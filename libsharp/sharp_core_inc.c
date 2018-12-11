@@ -217,11 +217,12 @@ NOINLINE static void Y(iter_to_ieee) (const Tb sth, Tb cth, int *l_,
     {
     if (l+2>gen->lmax) {*l_=gen->lmax+1;return;}
     for (int i=0; i<nvec; ++i)
+      {
       lam_1.v[i] = vload(gen->rf[l].f[0])*(cth.v[i]*lam_2.v[i])
                  - vload(gen->rf[l].f[1])*lam_1.v[i];
-    for (int i=0; i<nvec; ++i)
       lam_2.v[i] = vload(gen->rf[l+1].f[0])*(cth.v[i]*lam_1.v[i])
                  - vload(gen->rf[l+1].f[1])*lam_2.v[i];
+      }
     if (Y(rescale)(&lam_1,&lam_2,&scale))
       below_limit = Y(TballLt)(scale,sharp_limscale);
     l+=2;

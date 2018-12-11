@@ -200,7 +200,6 @@ typedef enum { SHARP_DP              = 1<<4,
 
                SHARP_USE_WEIGHTS     = 1<<20,    /* internal use only */
                SHARP_NO_OPENMP       = 1<<21,    /* internal use only */
-               SHARP_NVMAX           = (1<<4)-1 /* internal use only */
              } sharp_jobflags;
 
 /*! Performs a libsharp SHT job. The interface deliberately does not use

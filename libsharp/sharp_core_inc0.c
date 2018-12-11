@@ -40,35 +40,10 @@
 
 typedef complex double dcmplx;
 
-// must be in the range [0;6]
-#define MAXJOB_SPECIAL 2
-
 #define XCONCATX(a,b) a##b
 #define CONCATX(a,b) XCONCATX(a,b)
 #define XCONCAT2(a,b) a##_##b
 #define CONCAT2(a,b) XCONCAT2(a,b)
-#define XCONCAT3(a,b,c) a##_##b##_##c
-#define CONCAT3(a,b,c) XCONCAT3(a,b,c)
-
-#define nvec 1
-#include "sharp_core_inchelper.c"
-#undef nvec
-
-#define nvec 2
-#include "sharp_core_inchelper.c"
-#undef nvec
-
-#define nvec 3
-#include "sharp_core_inchelper.c"
-#undef nvec
-
-#define nvec 4
-#include "sharp_core_inchelper.c"
-#undef nvec
-
-#define nvec 5
-#include "sharp_core_inchelper.c"
-#undef nvec
 
 #define nvec 6
 #include "sharp_core_inchelper.c"
@@ -78,27 +53,5 @@ void CONCATX(inner_loop,ARCH) (sharp_job *job, const int *ispair,const double *c
   const double *sth, int llim, int ulim, sharp_Ylmgen_C *gen, int mi,
   const int *mlim)
   {
-  int nv=job->flags&SHARP_NVMAX;
-  switch (nv)
-    {
-    case 0x1:
-      CONCAT2(inner_loop,1) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
-      return;
-    case 0x2:
-      CONCAT2(inner_loop,2) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
-      return;
-    case 0x3:
-      CONCAT2(inner_loop,3) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
-      return;
-    case 0x4:
-      CONCAT2(inner_loop,4) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
-      return;
-    case 0x5:
-      CONCAT2(inner_loop,5) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
-      return;
-    case 0x6:
-      CONCAT2(inner_loop,6) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
-      return;
-    }
-  UTIL_FAIL("Incorrect vector parameters");
+  CONCAT2(inner_loop,6) (job, ispair,cth,sth,llim,ulim,gen,mi,mlim);
   }
