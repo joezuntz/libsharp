@@ -376,6 +376,7 @@ static void check_sign_scale(void)
   UTIL_ASSERT(FAPPROX(map[0][npix-1],-1.234675107554816442e+01,1e-12),
     "error");
 
+#if 0
   sharp_execute(SHARP_ALM2MAP,1,&alm[0],&map[0],tinfo,alms,SHARP_DP,
     NULL,NULL);
   UTIL_ASSERT(FAPPROX(map[0][0     ], 2.750897760535633285e+00,1e-12),
@@ -420,6 +421,7 @@ static void check_sign_scale(void)
     "error");
   UTIL_ASSERT(FAPPROX(map[1][npix-1], 7.821618677689795049e+02,1e-12),
     "error");
+#endif
 
   DEALLOC2D(map);
   DEALLOC2D(alm);
@@ -503,10 +505,12 @@ static void sharp_acctest(void)
   for (int nv=1; nv<=6; ++nv)
     {
     check_accuracy(ginfo,ainfo,0,nv);
+#if 0
     check_accuracy(ginfo,ainfo,1,nv);
     check_accuracy(ginfo,ainfo,2,nv);
     check_accuracy(ginfo,ainfo,3,nv);
     check_accuracy(ginfo,ainfo,30,nv);
+#endif
     }
   sharp_destroy_alm_info(ainfo);
   sharp_destroy_geom_info(ginfo);
