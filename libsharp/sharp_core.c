@@ -55,19 +55,10 @@ typedef struct
   { Tb r, i; } Tbri;
 
 typedef struct
-  { Tb qr, qi, ur, ui; } Tbqu;
-
-typedef struct
   { double r[VLEN*nvec], i[VLEN*nvec]; } Tsri;
-
-typedef struct
-  { double qr[VLEN*nvec],qi[VLEN*nvec],ur[VLEN*nvec],ui[VLEN*nvec]; } Tsqu;
 
 typedef union
   { Tbri b; Tsri s; } Tburi;
-
-typedef union
-  { Tbqu b; Tsqu s; } Tbuqu;
 
 static inline Tb Tbconst(double val)
   {
@@ -79,9 +70,6 @@ static inline Tb Tbconst(double val)
 
 static inline void Tbmuleq1(Tb * restrict a, double b)
   { Tv v=vload(b); for (int i=0; i<nvec; ++i) vmuleq(a->v[i],v); }
-
-static inline Tb Tbprod(Tb a, Tb b)
-  { Tb r; for (int i=0; i<nvec; ++i) r.v[i]=vmul(a.v[i],b.v[i]); return r; }
 
 static inline void Tbmuleq(Tb * restrict a, Tb b)
   { for (int i=0; i<nvec; ++i) vmuleq(a->v[i],b.v[i]); }
@@ -107,86 +95,56 @@ static void Tbnormalize (Tv * restrict val, Tv * restrict scale,
     }
   }
 
-NOINLINE static void mypow (Tb val, int npow, const double * restrict powlimit,
-  Tb * restrict resd, Tb * restrict ress)
+static void mypow(Tv val, int npow, const double * restrict powlimit,
+  Tv * restrict resd, Tv * restrict ress)
   {
   Tv vminv=vload(powlimit[npow]);
-  int npsave=npow;
-  for (int i=0;i<nvec; ++i)
+  Tv res=vone;
+  Tm mask = vlt(vabs(val),vminv);
+  if (!vanyTrue(mask)) // no underflows possible, use quick algoritm
     {
-    npow=npsave;
     Tv res=vone;
-    Tm mask = vlt(vabs(val.v[i]),vminv);
-    if (!vanyTrue(mask)) // no underflows possible, use quick algoritm
+    do
       {
-      Tv res=vone;
-      do
-        {
-        if (npow&1)
-          vmuleq(res,val.v[i]);
-        vmuleq(val.v[i],val.v[i]);
-        }
-      while(npow>>=1);
-      resd->v[i]=res;
-      ress->v[i]=vzero;
+      if (npow&1)
+        vmuleq(res,val);
+      vmuleq(val,val);
       }
-    else
+    while(npow>>=1);
+    *resd=res;
+    *ress=vzero;
+    }
+  else
+    {
+    Tv scale=vzero, scaleint=vzero, res=vone;
+    Tbnormalize(&val,&scaleint,sharp_fbighalf);
+    do
       {
-      Tv scale=vzero, scaleint=vzero, res=vone;
-      Tbnormalize(&val.v[i],&scaleint,sharp_fbighalf);
-      do
+      if (npow&1)
         {
-        if (npow&1)
-          {
-          vmuleq(res,val.v[i]);
-          vaddeq(scale,scaleint);
-          Tbnormalize(&res,&scale,sharp_fbighalf);
-          }
-        vmuleq(val.v[i],val.v[i]);
-        vaddeq(scaleint,scaleint);
-        Tbnormalize(&val.v[i],&scaleint,sharp_fbighalf);
+        vmuleq(res,val);
+        vaddeq(scale,scaleint);
+        Tbnormalize(&res,&scale,sharp_fbighalf);
         }
-      while(npow>>=1);
-      resd->v[i]=res;
-      ress->v[i]=scale;
+      vmuleq(val,val);
+      vaddeq(scaleint,scaleint);
+      Tbnormalize(&val,&scaleint,sharp_fbighalf);
       }
+    while(npow>>=1);
+    *resd=res;
+    *ress=scale;
     }
   }
 
-static inline int TballLt(Tb a,double b)
-  {
-  Tv vb=vload(b);
-  Tm res=vlt(a.v[0],vb);
-  for (int i=1; i<nvec; ++i)
-    res=vand_mask(res,vlt(a.v[i],vb));
-  return vallTrue(res);
-  }
-static inline int TballGt(Tb a,double b)
-  {
-  Tv vb=vload(b);
-  Tm res=vgt(a.v[0],vb);
-  for (int i=1; i<nvec; ++i)
-    res=vand_mask(res,vgt(a.v[i],vb));
-  return vallTrue(res);
-  }
-static inline int TballGe(Tb a,double b)
-  {
-  Tv vb=vload(b);
-  Tm res=vge(a.v[0],vb);
-  for (int i=1; i<nvec; ++i)
-    res=vand_mask(res,vge(a.v[i],vb));
-  return vallTrue(res);
-  }
-
-static void getCorfac(Tb scale, Tb * restrict corfac,
+static void getCorfac(Tv scale, Tv * restrict corfac,
   const double * restrict cf)
   {
-  Tbu sc, corf;
-  sc.b=scale;
-  for (int i=0; i<VLEN*nvec; ++i)
+  Tvu sc, corf;
+  sc.v=scale;
+  for (int i=0; i<VLEN; ++i)
     corf.s[i] = (sc.s[i]<sharp_minscale) ?
       0. : cf[(int)(sc.s[i])-sharp_minscale];
-  *corfac=corf.b;
+  *corfac=corf.v;
   }
 
 NOINLINE static void iter_to_ieee (const Tb sth, Tb cth, int *l_,
@@ -194,14 +152,18 @@ NOINLINE static void iter_to_ieee (const Tb sth, Tb cth, int *l_,
   const sharp_Ylmgen_C * restrict gen)
   {
   int l=gen->m;
-  for (int i=0; i<nvec; ++i) lam_1->v[i]=vzero;
-  mypow(sth,l,gen->powlimit,lam_2,scale);
-  Tbmuleq1(lam_2,(gen->m&1) ? -gen->mfac[gen->m]:gen->mfac[gen->m]);
-  for (int i=0; i<nvec; ++i)
-    Tbnormalize(&lam_2->v[i],&scale->v[i],sharp_ftol);
+  Tv mfac = vload((gen->m&1) ? -gen->mfac[gen->m]:gen->mfac[gen->m]);
   Tv fsmall=vload(sharp_fsmall), limscale=vload(sharp_limscale);
+  int below_limit = 1;
+  for (int i=0; i<nvec; ++i)
+    {
+    lam_1->v[i]=vzero;
+    mypow(sth.v[i],l,gen->powlimit,&lam_2->v[i],&scale->v[i]);
+    lam_2->v[i] *= mfac;
+    Tbnormalize(&lam_2->v[i],&scale->v[i],sharp_ftol);
+    below_limit &= vallTrue(vlt(scale->v[i],limscale));
+    }
 
-  int below_limit = TballLt(*scale,sharp_limscale);
   while (below_limit)
     {
     if (l+2>gen->lmax) {*l_=gen->lmax+1;return;}
@@ -279,17 +241,22 @@ NOINLINE static void calc_alm2map (const Tb cth, const Tb sth,
   Tbri * restrict p2)
   {
   int l,lmax=gen->lmax;
-  Tb lam_1=Tbconst(0.),lam_2=Tbconst(0.),scale;
+  Tb lam_1,lam_2,scale;
   iter_to_ieee(sth,cth,&l,&lam_1,&lam_2,&scale,gen);
   job->opcnt += (l-gen->m) * 4*VLEN*nvec;
   if (l>lmax) return;
   job->opcnt += (lmax+1-l) * 8*VLEN*nvec;
 
-  Tb corfac;
-  getCorfac(scale,&corfac,gen->cf);
   const sharp_ylmgen_dbl2 * restrict rf = gen->rf;
   const dcmplx * restrict alm=job->almtmp;
-  int full_ieee = TballGe(scale,sharp_minscale);
+  int full_ieee=1;
+  Tb corfac;
+  for (int i=0; i<nvec; ++i)
+    {
+    getCorfac(scale.v[i], &corfac.v[i], gen->cf);
+    full_ieee &= vallTrue(vge(scale.v[i],vload(sharp_minscale)));
+    }
+
   while((!full_ieee) && (l<=lmax))
     {
     Tv ar1=vload(creal(alm[l  ])), ai1=vload(cimag(alm[l  ]));
@@ -309,12 +276,7 @@ NOINLINE static void calc_alm2map (const Tb cth, const Tb sth,
         vmuleq_mask(mask,lam_1.v[i],vload(sharp_fsmall));
         vmuleq_mask(mask,lam_2.v[i],vload(sharp_fsmall));
         vaddeq_mask(mask,scale.v[i],vone);
-        Tvu sc, corf;
-        sc.v=scale.v[i];
-        for (int j=0; j<VLEN; ++j)
-          corf.s[j] = (sc.s[j]<sharp_minscale) ?
-            0. : gen->cf[(int)(sc.s[j])-sharp_minscale];
-        corfac.v[i]=corf.v;
+        getCorfac(scale.v[i], &corfac.v[i], gen->cf);
         full_ieee &= vallTrue(vge(scale.v[i],vload(sharp_minscale)));
         }
       vfmaeq(p2->r.v[i],lam_1.v[i]*corfac.v[i],ar2);
@@ -333,7 +295,7 @@ NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
   const Tbri * restrict p2)
   {
   int lmax=gen->lmax;
-  Tb lam_1=Tbconst(0.),lam_2=Tbconst(0.),scale;
+  Tb lam_1,lam_2,scale;
   int l=gen->m;
   iter_to_ieee(sth,cth,&l,&lam_1,&lam_2,&scale,gen);
   job->opcnt += (l-gen->m) * 4*VLEN*nvec;
@@ -342,9 +304,14 @@ NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
 
   const sharp_ylmgen_dbl2 * restrict rf = gen->rf;
   dcmplx * restrict alm=job->almtmp;
+  int full_ieee=1;
   Tb corfac;
-  getCorfac(scale,&corfac,gen->cf);
-  int full_ieee = TballGe(scale,sharp_minscale);
+  for (int i=0; i<nvec; ++i)
+    {
+    getCorfac(scale.v[i], &corfac.v[i], gen->cf);
+    full_ieee &= vallTrue(vge(scale.v[i],vload(sharp_minscale)));
+    }
+
   while ((!full_ieee) && (l<=lmax))
     {
     full_ieee=1;
@@ -363,12 +330,7 @@ NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
         vmuleq_mask(mask,lam_1.v[i],vload(sharp_fsmall));
         vmuleq_mask(mask,lam_2.v[i],vload(sharp_fsmall));
         vaddeq_mask(mask,scale.v[i],vone);
-        Tvu sc, corf;
-        sc.v=scale.v[i];
-        for (int j=0; j<VLEN; ++j)
-          corf.s[j] = (sc.s[j]<sharp_minscale) ?
-            0. : gen->cf[(int)(sc.s[j])-sharp_minscale];
-        corfac.v[i]=corf.v;
+        getCorfac(scale.v[i], &corfac.v[i], gen->cf);
         full_ieee &= vallTrue(vge(scale.v[i],vload(sharp_minscale)));
         }
       vfmaeq(atmp[2],lam_1.v[i]*corfac.v[i],p2->r.v[i]);
