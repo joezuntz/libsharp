@@ -253,21 +253,23 @@ NOINLINE static void alm2map_kernel(const Tb cth, Tbri * restrict p1,
 
 NOINLINE static void map2alm_kernel (const Tb cth,
   const Tbri * restrict p1, const Tbri * restrict p2, Tb lam_1, Tb lam_2,
-  const sharp_ylmgen_dbl2 * restrict rf, int l, int lmax, Tv *restrict atmp)
+  const sharp_ylmgen_dbl2 * restrict rf, dcmplx * restrict alm, int l, int lmax)
   {
   while (l<=lmax)
     {
     Tv f10=vload(rf[l  ].f[0]), f11=vload(rf[l  ].f[1]),
        f20=vload(rf[l+1].f[0]), f21=vload(rf[l+1].f[1]);
+    Tv atmp[4] = {vzero, vzero, vzero, vzero};
     for (int i=0; i<nvec; ++i)
       {
       lam_1.v[i] = f10*cth.v[i]*lam_2.v[i] - f11*lam_1.v[i];
-      vfmaeq(atmp[2*l  ],lam_2.v[i],p1->r.v[i]);
-      vfmaeq(atmp[2*l+1],lam_2.v[i],p1->i.v[i]);
+      vfmaeq(atmp[0],lam_2.v[i],p1->r.v[i]);
+      vfmaeq(atmp[1],lam_2.v[i],p1->i.v[i]);
       lam_2.v[i] = f20*cth.v[i]*lam_1.v[i] - f21*lam_2.v[i];
-      vfmaeq(atmp[2*(l+1)  ],lam_1.v[i],p2->r.v[i]);
-      vfmaeq(atmp[2*(l+1)+1],lam_1.v[i],p2->i.v[i]);
+      vfmaeq(atmp[2],lam_1.v[i],p2->r.v[i]);
+      vfmaeq(atmp[3],lam_1.v[i],p2->i.v[i]);
       }
+    vhsum_cmplx_special (atmp[0], atmp[1], atmp[2], atmp[3], &alm[l]);
     l+=2;
     }
   }
@@ -328,7 +330,7 @@ NOINLINE static void calc_alm2map (const Tb cth, const Tb sth,
 
 NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
   const sharp_Ylmgen_C *gen, sharp_job *job, const Tbri * restrict p1,
-  const Tbri * restrict p2, Tv *restrict atmp)
+  const Tbri * restrict p2)
   {
   int lmax=gen->lmax;
   Tb lam_1=Tbconst(0.),lam_2=Tbconst(0.),scale;
@@ -339,6 +341,7 @@ NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
   job->opcnt += (lmax+1-l) * 8*VLEN*nvec;
 
   const sharp_ylmgen_dbl2 * restrict rf = gen->rf;
+  dcmplx * restrict alm=job->almtmp;
   Tb corfac;
   getCorfac(scale,&corfac,gen->cf);
   int full_ieee = TballGe(scale,sharp_minscale);
@@ -347,11 +350,12 @@ NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
     full_ieee=1;
     Tv f10=vload(rf[l  ].f[0]), f11=vload(rf[l  ].f[1]),
        f20=vload(rf[l+1].f[0]), f21=vload(rf[l+1].f[1]);
+    Tv atmp[4] = {vzero, vzero, vzero, vzero};
     for (int i=0; i<nvec; ++i)
       {
       lam_1.v[i] = f10*cth.v[i]*lam_2.v[i] - f11*lam_1.v[i];
-      vfmaeq(atmp[2*l  ],lam_2.v[i]*corfac.v[i],p1->r.v[i]);
-      vfmaeq(atmp[2*l+1],lam_2.v[i]*corfac.v[i],p1->i.v[i]);
+      vfmaeq(atmp[0],lam_2.v[i]*corfac.v[i],p1->r.v[i]);
+      vfmaeq(atmp[1],lam_2.v[i]*corfac.v[i],p1->i.v[i]);
       lam_2.v[i] = f20*cth.v[i]*lam_1.v[i] - f21*lam_2.v[i];
       Tm mask = vgt(vabs(lam_2.v[i]),vload(sharp_ftol));
       if (vanyTrue(mask))
@@ -367,14 +371,15 @@ NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
         corfac.v[i]=corf.v;
         full_ieee &= vallTrue(vge(scale.v[i],vload(sharp_minscale)));
         }
-      vfmaeq(atmp[2*(l+1)  ],lam_1.v[i]*corfac.v[i],p2->r.v[i]);
-      vfmaeq(atmp[2*(l+1)+1],lam_1.v[i]*corfac.v[i],p2->i.v[i]);
+      vfmaeq(atmp[2],lam_1.v[i]*corfac.v[i],p2->r.v[i]);
+      vfmaeq(atmp[3],lam_1.v[i]*corfac.v[i],p2->i.v[i]);
       }
+    vhsum_cmplx_special (atmp[0], atmp[1], atmp[2], atmp[3], &alm[l]);
     l+=2;
     }
 
   Tbmuleq(&lam_1,corfac); Tbmuleq(&lam_2,corfac);
-  map2alm_kernel(cth, p1, p2, lam_1, lam_2, rf, l, lmax, atmp);
+  map2alm_kernel(cth, p1, p2, lam_1, lam_2, rf, alm, l, lmax);
   }
 
 
@@ -454,8 +459,6 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
       {
       if (job->spin==0)
         {
-        Tv atmp[2*(gen->lmax+2)];
-        memset (&atmp[2*m],0,2*(gen->lmax+2-m)*sizeof(Tv));
         for (int ith=0; ith<ulim-llim; ith+=nval)
           {
           Tburi p1, p2; VZERO(p1); VZERO(p2);
@@ -478,15 +481,8 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
               }
             }
           if (!skip)
-            calc_map2alm(cth.b,sth.b,gen,job,&p1.b,&p2.b, atmp);
+            calc_map2alm(cth.b,sth.b,gen,job,&p1.b,&p2.b);
           }
-        {
-        int istart=m, istop=gen->lmax+1;
-        for(; istart<istop-2; istart+=2)
-          vhsum_cmplx_special(atmp[2*istart],atmp[2*istart+1],atmp[2*istart+2],atmp[2*istart+3],&(job->almtmp[istart]));
-        for(; istart<istop; istart++)
-          job->almtmp[istart]+=vhsum_cmplx(atmp[2*istart],atmp[2*istart+1]);
-        }
         }
       else
         {
