@@ -374,6 +374,11 @@ NOINLINE static void inner_loop_a2m(sharp_job *job, const int *ispair,
               cth.s[nth]=cth_[ith]; sth.s[nth]=sth_[ith];
               ++nth;
               }
+            else
+              {
+              int phas_idx = ith*job->s_th + mi*job->s_m;
+              job->phase[phas_idx] = job->phase[phas_idx+1] = 0;
+              }
             ++ith;
             }
           if (nth>0)
