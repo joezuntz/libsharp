@@ -447,7 +447,16 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
             ++ith;
             }
           if (nth>0)
+            {
+            int i2=((nth+VLEN-1)/VLEN)*VLEN;
+            for (int i=nth; i<i2; ++i)
+              {
+              cth.s[i]=cth.s[nth-1];
+              sth.s[i]=sth.s[nth-1];
+              p1.s.r[i]=p1.s.i[i]=p2.s.r[i]=p2.s.i[i]=0.;
+              }
             calc_map2alm(cth.b,sth.b,gen,job,&p1.b,&p2.b, nth);
+            }
           }
         }
       else
