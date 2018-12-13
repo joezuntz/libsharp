@@ -60,21 +60,7 @@ typedef struct
 typedef union
   { Tbri b; Tsri s; } Tburi;
 
-static inline Tb Tbconst(double val)
-  {
-  Tv v=vload(val);
-  Tb res;
-  for (int i=0; i<nvec; ++i) res.v[i]=v;
-  return res;
-  }
-
-static inline void Tbmuleq1(Tb * restrict a, double b)
-  { Tv v=vload(b); for (int i=0; i<nvec; ++i) vmuleq(a->v[i],v); }
-
-static inline void Tbmuleq(Tb * restrict a, Tb b)
-  { for (int i=0; i<nvec; ++i) vmuleq(a->v[i],b.v[i]); }
-
-static void Tbnormalize (Tv * restrict val, Tv * restrict scale,
+static void Tvnormalize (Tv * restrict val, Tv * restrict scale,
   double maxval)
   {
   const Tv vfmin=vload(sharp_fsmall*maxval), vfmax=vload(maxval);
@@ -117,18 +103,18 @@ static void mypow(Tv val, int npow, const double * restrict powlimit,
   else
     {
     Tv scale=vzero, scaleint=vzero, res=vone;
-    Tbnormalize(&val,&scaleint,sharp_fbighalf);
+    Tvnormalize(&val,&scaleint,sharp_fbighalf);
     do
       {
       if (npow&1)
         {
         vmuleq(res,val);
         vaddeq(scale,scaleint);
-        Tbnormalize(&res,&scale,sharp_fbighalf);
+        Tvnormalize(&res,&scale,sharp_fbighalf);
         }
       vmuleq(val,val);
       vaddeq(scaleint,scaleint);
-      Tbnormalize(&val,&scaleint,sharp_fbighalf);
+      Tvnormalize(&val,&scaleint,sharp_fbighalf);
       }
     while(npow>>=1);
     *resd=res;
@@ -149,18 +135,18 @@ static void getCorfac(Tv scale, Tv * restrict corfac,
 
 NOINLINE static void iter_to_ieee (const Tb sth, Tb cth, int *l_,
   Tb * restrict lam_1, Tb * restrict lam_2, Tb * restrict scale,
-  const sharp_Ylmgen_C * restrict gen)
+  const sharp_Ylmgen_C * restrict gen, int nv2)
   {
   int l=gen->m;
   Tv mfac = vload((gen->m&1) ? -gen->mfac[gen->m]:gen->mfac[gen->m]);
   Tv fsmall=vload(sharp_fsmall), limscale=vload(sharp_limscale);
   int below_limit = 1;
-  for (int i=0; i<nvec; ++i)
+  for (int i=0; i<nv2; ++i)
     {
     lam_1->v[i]=vzero;
     mypow(sth.v[i],l,gen->powlimit,&lam_2->v[i],&scale->v[i]);
     lam_2->v[i] *= mfac;
-    Tbnormalize(&lam_2->v[i],&scale->v[i],sharp_ftol);
+    Tvnormalize(&lam_2->v[i],&scale->v[i],sharp_ftol);
     below_limit &= vallTrue(vlt(scale->v[i],limscale));
     }
 
@@ -170,7 +156,7 @@ NOINLINE static void iter_to_ieee (const Tb sth, Tb cth, int *l_,
     below_limit=1;
     Tv r10=vload(gen->rf[l  ].f[0]), r11=vload(gen->rf[l  ].f[1]),
        r20=vload(gen->rf[l+1].f[0]), r21=vload(gen->rf[l+1].f[1]);
-    for (int i=0; i<nvec; ++i)
+    for (int i=0; i<nv2; ++i)
       {
       lam_1->v[i] = r10*cth.v[i]*lam_2->v[i] - r11*lam_1->v[i];
       lam_2->v[i] = r20*cth.v[i]*lam_1->v[i] - r21*lam_2->v[i];
@@ -192,7 +178,7 @@ NOINLINE static void iter_to_ieee (const Tb sth, Tb cth, int *l_,
 NOINLINE static void alm2map_kernel(const Tb cth, Tbri * restrict p1,
   Tbri * restrict p2, Tb lam_1, Tb lam_2,
   const sharp_ylmgen_dbl2 * restrict rf, const dcmplx * restrict alm,
-  int l, int lmax)
+  int l, int lmax, int nv2)
   {
   while (l<=lmax)
     {
@@ -200,7 +186,7 @@ NOINLINE static void alm2map_kernel(const Tb cth, Tbri * restrict p1,
     Tv ar2=vload(creal(alm[l+1])), ai2=vload(cimag(alm[l+1]));
     Tv f10=vload(rf[l  ].f[0]), f11=vload(rf[l  ].f[1]),
        f20=vload(rf[l+1].f[0]), f21=vload(rf[l+1].f[1]);
-    for (int i=0; i<nvec; ++i)
+    for (int i=0; i<nv2; ++i)
       {
       lam_1.v[i] = f10*cth.v[i]*lam_2.v[i] - f11*lam_1.v[i];
       vfmaeq(p1->r.v[i],lam_2.v[i],ar1);
@@ -215,14 +201,15 @@ NOINLINE static void alm2map_kernel(const Tb cth, Tbri * restrict p1,
 
 NOINLINE static void map2alm_kernel (const Tb cth,
   const Tbri * restrict p1, const Tbri * restrict p2, Tb lam_1, Tb lam_2,
-  const sharp_ylmgen_dbl2 * restrict rf, dcmplx * restrict alm, int l, int lmax)
+  const sharp_ylmgen_dbl2 * restrict rf, dcmplx * restrict alm, int l,
+  int lmax, int nv2)
   {
   while (l<=lmax)
     {
     Tv f10=vload(rf[l  ].f[0]), f11=vload(rf[l  ].f[1]),
        f20=vload(rf[l+1].f[0]), f21=vload(rf[l+1].f[1]);
     Tv atmp[4] = {vzero, vzero, vzero, vzero};
-    for (int i=0; i<nvec; ++i)
+    for (int i=0; i<nv2; ++i)
       {
       lam_1.v[i] = f10*cth.v[i]*lam_2.v[i] - f11*lam_1.v[i];
       vfmaeq(atmp[0],lam_2.v[i],p1->r.v[i]);
@@ -238,20 +225,21 @@ NOINLINE static void map2alm_kernel (const Tb cth,
 
 NOINLINE static void calc_alm2map (const Tb cth, const Tb sth,
   const sharp_Ylmgen_C *gen, sharp_job *job, Tbri * restrict p1,
-  Tbri * restrict p2)
+  Tbri * restrict p2, int nth)
   {
   int l,lmax=gen->lmax;
   Tb lam_1,lam_2,scale;
-  iter_to_ieee(sth,cth,&l,&lam_1,&lam_2,&scale,gen);
-  job->opcnt += (l-gen->m) * 4*VLEN*nvec;
+  int nv2 = (nth+VLEN-1)/VLEN;
+  iter_to_ieee(sth,cth,&l,&lam_1,&lam_2,&scale,gen,nv2);
+  job->opcnt += (l-gen->m) * 4*nth;
   if (l>lmax) return;
-  job->opcnt += (lmax+1-l) * 8*VLEN*nvec;
+  job->opcnt += (lmax+1-l) * 8*nth;
 
   const sharp_ylmgen_dbl2 * restrict rf = gen->rf;
   const dcmplx * restrict alm=job->almtmp;
   int full_ieee=1;
   Tb corfac;
-  for (int i=0; i<nvec; ++i)
+  for (int i=0; i<nv2; ++i)
     {
     getCorfac(scale.v[i], &corfac.v[i], gen->cf);
     full_ieee &= vallTrue(vge(scale.v[i],vload(sharp_minscale)));
@@ -264,7 +252,7 @@ NOINLINE static void calc_alm2map (const Tb cth, const Tb sth,
     Tv f10=vload(rf[l  ].f[0]), f11=vload(rf[l  ].f[1]),
        f20=vload(rf[l+1].f[0]), f21=vload(rf[l+1].f[1]);
     full_ieee=1;
-    for (int i=0; i<nvec; ++i)
+    for (int i=0; i<nv2; ++i)
       {
       lam_1.v[i] = f10*cth.v[i]*lam_2.v[i] - f11*lam_1.v[i];
       vfmaeq(p1->r.v[i],lam_2.v[i]*corfac.v[i],ar1);
@@ -286,27 +274,32 @@ NOINLINE static void calc_alm2map (const Tb cth, const Tb sth,
     }
   if (l>lmax) return;
 
-  Tbmuleq(&lam_1,corfac); Tbmuleq(&lam_2,corfac);
-  alm2map_kernel(cth, p1, p2, lam_1, lam_2, rf, alm, l, lmax);
+  for (int i=0; i<nv2; ++i)
+    {
+    lam_1.v[i] *= corfac.v[i];
+    lam_2.v[i] *= corfac.v[i];
+    }
+  alm2map_kernel(cth, p1, p2, lam_1, lam_2, rf, alm, l, lmax, nv2);
   }
 
 NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
   const sharp_Ylmgen_C *gen, sharp_job *job, const Tbri * restrict p1,
-  const Tbri * restrict p2)
+  const Tbri * restrict p2, int nth)
   {
   int lmax=gen->lmax;
   Tb lam_1,lam_2,scale;
   int l=gen->m;
-  iter_to_ieee(sth,cth,&l,&lam_1,&lam_2,&scale,gen);
-  job->opcnt += (l-gen->m) * 4*VLEN*nvec;
+  int nv2 = (nth+VLEN-1)/VLEN;
+  iter_to_ieee(sth,cth,&l,&lam_1,&lam_2,&scale,gen,nv2);
+  job->opcnt += (l-gen->m) * 4*nth;
   if (l>lmax) return;
-  job->opcnt += (lmax+1-l) * 8*VLEN*nvec;
+  job->opcnt += (lmax+1-l) * 8*nth;
 
   const sharp_ylmgen_dbl2 * restrict rf = gen->rf;
   dcmplx * restrict alm=job->almtmp;
   int full_ieee=1;
   Tb corfac;
-  for (int i=0; i<nvec; ++i)
+  for (int i=0; i<nv2; ++i)
     {
     getCorfac(scale.v[i], &corfac.v[i], gen->cf);
     full_ieee &= vallTrue(vge(scale.v[i],vload(sharp_minscale)));
@@ -318,7 +311,7 @@ NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
     Tv f10=vload(rf[l  ].f[0]), f11=vload(rf[l  ].f[1]),
        f20=vload(rf[l+1].f[0]), f21=vload(rf[l+1].f[1]);
     Tv atmp[4] = {vzero, vzero, vzero, vzero};
-    for (int i=0; i<nvec; ++i)
+    for (int i=0; i<nv2; ++i)
       {
       lam_1.v[i] = f10*cth.v[i]*lam_2.v[i] - f11*lam_1.v[i];
       vfmaeq(atmp[0],lam_2.v[i]*corfac.v[i],p1->r.v[i]);
@@ -340,8 +333,12 @@ NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
     l+=2;
     }
 
-  Tbmuleq(&lam_1,corfac); Tbmuleq(&lam_2,corfac);
-  map2alm_kernel(cth, p1, p2, lam_1, lam_2, rf, alm, l, lmax);
+  for (int i=0; i<nv2; ++i)
+    {
+    lam_1.v[i] *= corfac.v[i];
+    lam_2.v[i] *= corfac.v[i];
+    }
+  map2alm_kernel(cth, p1, p2, lam_1, lam_2, rf, alm, l, lmax, nv2);
   }
 
 
@@ -362,32 +359,40 @@ NOINLINE static void inner_loop_a2m(sharp_job *job, const int *ispair,
       {
       if (job->spin==0)
         {
-        for (int ith=0; ith<ulim-llim; ith+=nval)
+        int ith=0;
+        int itgt[nvec*VLEN];
+        while (ith<ulim-llim)
           {
           Tburi p1,p2; VZERO(p1); VZERO(p2);
           Tbu cth, sth;
-
-          int skip=1;
-          for (int i=0; i<nval; ++i)
+          int nth=0;
+          while ((nth<nval)&&(ith<ulim-llim))
             {
-            int itot=i+ith;
-            if (itot>=ulim-llim) itot=ulim-llim-1;
-            if (mlim[itot]>=m) skip=0;
-            cth.s[i]=cth_[itot]; sth.s[i]=sth_[itot];
-            }
-          if (!skip)
-            calc_alm2map (cth.b,sth.b,gen,job,&p1.b,&p2.b);
-
-          for (int i=0; i<nval; ++i)
-            {
-            int itot=i+ith;
-            if (itot<ulim-llim)
+            if (mlim[ith]>=m)
               {
-              int phas_idx = itot*job->s_th + mi*job->s_m;
+              itgt[nth] = ith;
+              cth.s[nth]=cth_[ith]; sth.s[nth]=sth_[ith];
+              ++nth;
+              }
+            ++ith;
+            }
+          if (nth>0)
+            {
+            int i2=((nth+VLEN-1)/VLEN)*VLEN;
+            for (int i=nth; i<i2; ++i)
+              {
+              cth.s[i]=cth.s[nth-1];
+              sth.s[i]=sth.s[nth-1];
+              }
+            calc_alm2map (cth.b,sth.b,gen,job,&p1.b,&p2.b,nth);
+            for (int i=0; i<nth; ++i)
+              {
+              int tgt=itgt[i];
+              int phas_idx = tgt*job->s_th + mi*job->s_m;
               complex double r1 = p1.s.r[i] + p1.s.i[i]*_Complex_I,
                              r2 = p2.s.r[i] + p2.s.i[i]*_Complex_I;
               job->phase[phas_idx] = r1+r2;
-              if (ispair[itot])
+              if (ispair[tgt])
                 job->phase[phas_idx+1] = r1-r2;
               }
             }
@@ -421,29 +426,28 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
       {
       if (job->spin==0)
         {
-        for (int ith=0; ith<ulim-llim; ith+=nval)
+        int ith=0;
+        while (ith<ulim-llim)
           {
-          Tburi p1, p2; VZERO(p1); VZERO(p2);
+          Tburi p1,p2; VZERO(p1); VZERO(p2);
           Tbu cth, sth;
-          int skip=1;
-
-          for (int i=0; i<nval; ++i)
+          int nth=0;
+          while ((nth<nval)&&(ith<ulim-llim))
             {
-            int itot=i+ith;
-            if (itot>=ulim-llim) itot=ulim-llim-1;
-            if (mlim[itot]>=m) skip=0;
-            cth.s[i]=cth_[itot]; sth.s[i]=sth_[itot];
-            if ((i+ith<ulim-llim)&&(mlim[itot]>=m))
+            if (mlim[ith]>=m)
               {
-              int phas_idx = itot*job->s_th + mi*job->s_m;
+              cth.s[nth]=cth_[ith]; sth.s[nth]=sth_[ith];
+              int phas_idx = ith*job->s_th + mi*job->s_m;
               dcmplx ph1=job->phase[phas_idx];
-              dcmplx ph2=ispair[itot] ? job->phase[phas_idx+1] : 0.;
-              p1.s.r[i]=creal(ph1+ph2); p1.s.i[i]=cimag(ph1+ph2);
-              p2.s.r[i]=creal(ph1-ph2); p2.s.i[i]=cimag(ph1-ph2);
+              dcmplx ph2=ispair[ith] ? job->phase[phas_idx+1] : 0.;
+              p1.s.r[nth]=creal(ph1+ph2); p1.s.i[nth]=cimag(ph1+ph2);
+              p2.s.r[nth]=creal(ph1-ph2); p2.s.i[nth]=cimag(ph1-ph2);
+              ++nth;
               }
+            ++ith;
             }
-          if (!skip)
-            calc_map2alm(cth.b,sth.b,gen,job,&p1.b,&p2.b);
+          if (nth>0)
+            calc_map2alm(cth.b,sth.b,gen,job,&p1.b,&p2.b, nth);
           }
         }
       else
