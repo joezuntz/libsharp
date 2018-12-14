@@ -60,7 +60,7 @@ typedef struct
 typedef union
   { Tbri b; Tsri s; } Tburi;
 
-static void Tvnormalize (Tv * restrict val, Tv * restrict scale,
+static inline void Tvnormalize (Tv * restrict val, Tv * restrict scale,
   double maxval)
   {
   const Tv vfmin=vload(sharp_fsmall*maxval), vfmax=vload(maxval);
@@ -85,7 +85,6 @@ static void mypow(Tv val, int npow, const double * restrict powlimit,
   Tv * restrict resd, Tv * restrict ress)
   {
   Tv vminv=vload(powlimit[npow]);
-  Tv res=vone;
   Tm mask = vlt(vabs(val),vminv);
   if (!vanyTrue(mask)) // no underflows possible, use quick algoritm
     {
@@ -122,7 +121,7 @@ static void mypow(Tv val, int npow, const double * restrict powlimit,
     }
   }
 
-static void getCorfac(Tv scale, Tv * restrict corfac,
+static inline void getCorfac(Tv scale, Tv * restrict corfac,
   const double * restrict cf)
   {
   Tvu sc, corf;
@@ -133,13 +132,26 @@ static void getCorfac(Tv scale, Tv * restrict corfac,
   *corfac=corf.v;
   }
 
+static inline int rescale(Tv * restrict v1, Tv * restrict v2, Tv * restrict s, Tv eps)
+  {
+  Tm mask = vgt(vabs(*v2),eps);
+  if (vanyTrue(mask))
+    {
+    vmuleq_mask(mask,*v1,vload(sharp_fsmall));
+    vmuleq_mask(mask,*v2,vload(sharp_fsmall));
+    vaddeq_mask(mask,*s,vone);
+    return 1;
+    }
+  return 0;
+  }
+
 NOINLINE static void iter_to_ieee (const Tb sth, Tb cth, int *l_,
   Tb * restrict lam_1, Tb * restrict lam_2, Tb * restrict scale,
   const sharp_Ylmgen_C * restrict gen, int nv2)
   {
   int l=gen->m;
   Tv mfac = vload((gen->m&1) ? -gen->mfac[gen->m]:gen->mfac[gen->m]);
-  Tv fsmall=vload(sharp_fsmall), limscale=vload(sharp_limscale);
+  Tv limscale=vload(sharp_limscale);
   int below_limit = 1;
   for (int i=0; i<nv2; ++i)
     {
@@ -160,20 +172,129 @@ NOINLINE static void iter_to_ieee (const Tb sth, Tb cth, int *l_,
       {
       lam_1->v[i] = r10*cth.v[i]*lam_2->v[i] - r11*lam_1->v[i];
       lam_2->v[i] = r20*cth.v[i]*lam_1->v[i] - r21*lam_2->v[i];
-      Tm mask = vgt(vabs(lam_2->v[i]),vload(sharp_ftol));
-      if (vanyTrue(mask))
-        {
-        vmuleq_mask(mask,lam_1->v[i],fsmall);
-        vmuleq_mask(mask,lam_2->v[i],fsmall);
-        vaddeq_mask(mask,scale->v[i],vone);
+      if (rescale(&lam_1->v[i], &lam_2->v[i], &scale->v[i], vload(sharp_ftol)))
         below_limit &= vallTrue(vlt(scale->v[i],limscale));
-        }
       }
     l+=2;
     }
   *l_=l;
   }
 
+#if 1
+static inline void rec_step (Tv * restrict rxp, Tv * restrict rxm,
+  Tv * restrict ryp, Tv * restrict rym, const Tv cth,
+  const sharp_ylmgen_dbl3 fx)
+  {
+  Tv fx0=vload(fx.f[0]),fx1=vload(fx.f[1]),fx2=vload(fx.f[2]);
+  *rxp = (cth-fx1)*fx0* *ryp - fx2* *rxp;
+  *rxm = (cth+fx1)*fx0* *rym - fx2* *rxm;
+  }
+
+NOINLINE static void iter_to_ieee_spin (const Tb cth, const Tb sth, int *l_,
+  Tb * rec1p, Tb * rec1m, Tb * rec2p, Tb * rec2m,
+  Tb * scalep, Tb * scalem, const sharp_Ylmgen_C * restrict gen, int nv2)
+  {
+  const sharp_ylmgen_dbl3 * restrict fx = gen->fx;
+  Tb ccp, ccps, ssp, ssps, csp, csps, scp, scps;
+  Tv prefac=vload(gen->prefac[gen->m]),
+     prescale=vload(gen->fscale[gen->m]);
+  Tv limscale=vload(sharp_limscale);
+  int below_limit=1;
+  for (int i=0; i<nv2; ++i)
+    {
+    Tv cth2, sth2;
+    cth2=vsqrt(vmul(vadd(vone,cth.v[i]),vload(0.5)));
+    cth2=vmax(cth2,vload(1e-15));
+    sth2=vsqrt(vmul(vsub(vone,cth.v[i]),vload(0.5)));
+    sth2=vmax(sth2,vload(1e-15));
+    Tm mask=vlt(sth.v[i],vzero);
+    Tm cmask=vand_mask(mask,vlt(cth.v[i],vzero));
+    vmuleq_mask(cmask,cth2,vload(-1.));
+    Tm smask=vand_mask(mask,vgt(cth.v[i],vzero));
+    vmuleq_mask(smask,sth2,vload(-1.));
+
+    mypow(cth2,gen->cosPow,gen->powlimit,&ccp.v[i],&ccps.v[i]);
+    mypow(sth2,gen->sinPow,gen->powlimit,&ssp.v[i],&ssps.v[i]);
+    mypow(cth2,gen->sinPow,gen->powlimit,&csp.v[i],&csps.v[i]);
+    mypow(sth2,gen->cosPow,gen->powlimit,&scp.v[i],&scps.v[i]);
+
+    rec1p->v[i] = vzero;
+    rec1m->v[i] = vzero;
+    rec2p->v[i]=vmul(prefac,ccp.v[i]);
+    scalep->v[i]=vadd(prescale,ccps.v[i]);
+    rec2m->v[i]=vmul(prefac,csp.v[i]);
+    scalem->v[i]=vadd(prescale,csps.v[i]);
+    Tvnormalize(&rec2m->v[i],&scalem->v[i],sharp_fbighalf);
+    Tvnormalize(&rec2p->v[i],&scalep->v[i],sharp_fbighalf);
+
+    rec2p->v[i]=vmul(rec2p->v[i],ssp.v[i]);
+    scalep->v[i]=vadd(scalep->v[i],ssps.v[i]);
+    rec2m.v[i]=vmul(rec2m.v[i],scp.v[i]);
+    scalem.v[i]=vadd(scalem.v[i],scps.v[i]);
+    if (gen->preMinus_p)
+      rec2p.v[i]=vneg(rec2p.v[i]);
+    if (gen->preMinus_m)
+      rec2m.v[i]=vneg(rec2m.v[i]);
+    if (gen->s&1)
+      rec2p.v[i]=vneg(rec2p.v[i]);
+
+    Tvnormalize(&rec2m.v[i],&scalem.v[i],sharp_ftol);
+    Tvnormalize(&rec2p.v[i],&scalep.v[i],sharp_ftol);
+
+    below_limit &= vallTrue(vand_mask(vlt(scalem.v[i],limscale),vlt(scalep.v[i],limscale)));
+    }
+
+  int l=gen->mhi;
+
+  while (below_limit)
+    {
+    if (l+2>gen->lmax) {*l_=gen->lmax+1;return;}
+    for (int i=0; i<nv2; ++i)
+      {
+      rec_step(&rec1p.v[i],&rec1m.v[i],&rec2p.v[i],&rec2m.v[i],cth.v[i],fx[l+1]);
+      rec_step(&rec2p.v[i],&rec2m.v[i],&rec1p.v[i],&rec1m.v[i],cth.v[i],fx[l+2]);
+      if (rescale(&rec1p.v[i],&rec2p.v[i],&scalep.v[i],vload(sharp_ftol)) ||
+          rescale(&rec1m.v[i],&rec2m.v[i],&scalem.v[i],vload(sharp_ftol)))
+      below_limit &= vallTrue(vlt(scalep.v[i],limscale)) &&
+                     vallTrue(vlt(scalem.v[i],limscale));
+      }
+    l+=2;
+    }
+
+  *l_=l;
+  *rec1p_=rec1p; *rec2p_=rec2p; *scalep_=scalep;
+  *rec1m_=rec1m; *rec2m_=rec2m; *scalem_=scalem;
+  }
+
+NOINLINE static void alm2map_spin_kernel(Tb cth, Tbqu * restrict p1,
+  Tbqu * restrict p2, Tb rec1p, Tb rec1m, Tb rec2p, Tb rec2m,
+  const sharp_ylmgen_dbl3 * restrict fx, const dcmplx * restrict alm, int l,
+  int lmax, int nv2)
+  {
+  while (l<=lmax)
+    {
+    Tv fx10=vload(fx[l+1].f[0]),fx1=v1load(fx[l+1].f[1]),
+       fx12=vload(fx[l+1].f[2]);
+    for (int i=0; i<nvec; ++i)
+      {
+      rec1p.v[i] = (cth.v[i]-fx1)*fx0*rec2p.v[i] - fx2*rec1p.v[i];
+      rec1m.v[i] = (cth.v[i]+fx1)*fx0*rec2m.v[i] - fx2*rec1m.v[i];
+      }
+    Z(saddstepb)(p1,p2,rec1p,rec1m,rec2p,rec2m,&alm[2*njobs*l],
+      &alm[2*njobs*(l+1)] NJ2);
+    fx0=vload(fx[l+2].f[0]);fx1=vload(fx[l+2].f[1]);
+    fx2=vload(fx[l+2].f[2]);
+    for (int i=0; i<nvec; ++i)
+      {
+      rec2p.v[i] = (cth.v[i]-fx1)*fx0*rec1p.v[i] - fx2*rec2p.v[i];
+      rec2m.v[i] = (cth.v[i]+fx1)*fx0*rec1m.v[i] - fx2*rec2m.v[i];
+      }
+    l+=2;
+    }
+  if (l==lmax)
+    Z(saddstep)(p1, p2, rec2p, rec2m, &alm[2*njobs*l] NJ2);
+  }
+#endif
 
 NOINLINE static void alm2map_kernel(const Tb cth, Tbri * restrict p1,
   Tbri * restrict p2, Tb lam_1, Tb lam_2,
@@ -258,12 +379,8 @@ NOINLINE static void calc_alm2map (const Tb cth, const Tb sth,
       vfmaeq(p1->r.v[i],lam_2.v[i]*corfac.v[i],ar1);
       vfmaeq(p1->i.v[i],lam_2.v[i]*corfac.v[i],ai1);
       lam_2.v[i] = f20*cth.v[i]*lam_1.v[i] - f21*lam_2.v[i];
-      Tm mask = vgt(vabs(lam_2.v[i]),vload(sharp_ftol));
-      if (vanyTrue(mask))
+      if (rescale(&lam_1.v[i], &lam_2.v[i], &scale.v[i], vload(sharp_ftol)))
         {
-        vmuleq_mask(mask,lam_1.v[i],vload(sharp_fsmall));
-        vmuleq_mask(mask,lam_2.v[i],vload(sharp_fsmall));
-        vaddeq_mask(mask,scale.v[i],vone);
         getCorfac(scale.v[i], &corfac.v[i], gen->cf);
         full_ieee &= vallTrue(vge(scale.v[i],vload(sharp_minscale)));
         }
@@ -317,12 +434,8 @@ NOINLINE static void calc_map2alm(const Tb cth, const Tb sth,
       vfmaeq(atmp[0],lam_2.v[i]*corfac.v[i],p1->r.v[i]);
       vfmaeq(atmp[1],lam_2.v[i]*corfac.v[i],p1->i.v[i]);
       lam_2.v[i] = f20*cth.v[i]*lam_1.v[i] - f21*lam_2.v[i];
-      Tm mask = vgt(vabs(lam_2.v[i]),vload(sharp_ftol));
-      if (vanyTrue(mask))
+      if (rescale(&lam_1.v[i], &lam_2.v[i], &scale.v[i], vload(sharp_ftol)))
         {
-        vmuleq_mask(mask,lam_1.v[i],vload(sharp_fsmall));
-        vmuleq_mask(mask,lam_2.v[i],vload(sharp_fsmall));
-        vaddeq_mask(mask,scale.v[i],vone);
         getCorfac(scale.v[i], &corfac.v[i], gen->cf);
         full_ieee &= vallTrue(vge(scale.v[i],vload(sharp_minscale)));
         }
