@@ -45,21 +45,6 @@ typedef complex double dcmplx;
 typedef union
   { Tv v; double s[VLEN]; } Tvu;
 
-typedef struct
-  { Tv v[nvec]; } Tb;
-
-typedef union
-  { Tb b; double s[VLEN*nvec]; } Tbu;
-
-typedef struct
-  { Tb r, i; } Tbri;
-
-typedef struct
-  { double r[VLEN*nvec], i[VLEN*nvec]; } Tsri;
-
-typedef union
-  { Tbri b; Tsri s; } Tburi;
-
 typedef Tv Tbv[nvec];
 typedef double Tbs[nvec*VLEN];
 
@@ -78,6 +63,24 @@ typedef union
   s0data_v v;
   s0data_s s;
   } s0data_u;
+
+typedef struct
+  {
+  Tbv sth, cfp, cfm, scp, scm, l1p, l2p, l1m, l2m, cth,
+      p1pr, p1pi, p2pr, p2pi, p1mr, p1mi, p2mr, p2mi;
+  } sxdata_v;
+
+typedef struct
+  {
+  Tbs sth, cfp, cfm, scp, scm, l1p, l2p, l1m, l2m, cth,
+      p1pr, p1pi, p2pr, p2pi, p1mr, p1mi, p2mr, p2mi;
+  } sxdata_s;
+
+typedef union
+  {
+  sxdata_v v;
+  sxdata_s s;
+  } sxdata_u;
 
 static inline void Tvnormalize (Tv * restrict val, Tv * restrict scale,
   double maxval)
@@ -208,12 +211,11 @@ static inline void rec_step (Tv * restrict rxp, Tv * restrict rxm,
   *rxm = (cth+fx1)*fx0* *rym - fx2* *rxm;
   }
 
-NOINLINE static void iter_to_ieee_spin (const Tb cth, const Tb sth, int *l_,
-  Tb * rec1p, Tb * rec1m, Tb * rec2p, Tb * rec2m,
-  Tb * scalep, Tb * scalem, const sharp_Ylmgen_C * restrict gen, int nv2)
+NOINLINE static void iter_to_ieee_spin (const sharp_Ylmgen_C * restrict gen,
+  sxdata_v * restrict d, int * restrict l_, int nv2)
   {
   const sharp_ylmgen_dbl3 * restrict fx = gen->fx;
-  Tb ccp, ccps, ssp, ssps, csp, csps, scp, scps;
+  Tbv ccp, ccps, ssp, ssps, csp, csps, scp, scps;
   Tv prefac=vload(gen->prefac[gen->m]),
      prescale=vload(gen->fscale[gen->m]);
   Tv limscale=vload(sharp_limscale);
@@ -221,45 +223,45 @@ NOINLINE static void iter_to_ieee_spin (const Tb cth, const Tb sth, int *l_,
   for (int i=0; i<nv2; ++i)
     {
     Tv cth2, sth2;
-    cth2=vsqrt(vmul(vadd(vone,cth.v[i]),vload(0.5)));
+    cth2=vsqrt((vone+d->cth[i])*vload(0.5));
     cth2=vmax(cth2,vload(1e-15));
-    sth2=vsqrt(vmul(vsub(vone,cth.v[i]),vload(0.5)));
+    sth2=vsqrt((vone-d->cth[i])*vload(0.5));
     sth2=vmax(sth2,vload(1e-15));
-    Tm mask=vlt(sth.v[i],vzero);
-    Tm cmask=vand_mask(mask,vlt(cth.v[i],vzero));
+    Tm mask=vlt(d->sth[i],vzero);
+    Tm cmask=vand_mask(mask,vlt(d->cth[i],vzero));
     vmuleq_mask(cmask,cth2,vload(-1.));
-    Tm smask=vand_mask(mask,vgt(cth.v[i],vzero));
+    Tm smask=vand_mask(mask,vgt(d->cth[i],vzero));
     vmuleq_mask(smask,sth2,vload(-1.));
 
-    mypow(cth2,gen->cosPow,gen->powlimit,&ccp.v[i],&ccps.v[i]);
-    mypow(sth2,gen->sinPow,gen->powlimit,&ssp.v[i],&ssps.v[i]);
-    mypow(cth2,gen->sinPow,gen->powlimit,&csp.v[i],&csps.v[i]);
-    mypow(sth2,gen->cosPow,gen->powlimit,&scp.v[i],&scps.v[i]);
+    mypow(cth2,gen->cosPow,gen->powlimit,&ccp[i],&ccps[i]);
+    mypow(sth2,gen->sinPow,gen->powlimit,&ssp[i],&ssps[i]);
+    mypow(cth2,gen->sinPow,gen->powlimit,&csp[i],&csps[i]);
+    mypow(sth2,gen->cosPow,gen->powlimit,&scp[i],&scps[i]);
 
-    rec1p->v[i] = vzero;
-    rec1m->v[i] = vzero;
-    rec2p->v[i]=vmul(prefac,ccp.v[i]);
-    scalep->v[i]=vadd(prescale,ccps.v[i]);
-    rec2m->v[i]=vmul(prefac,csp.v[i]);
-    scalem->v[i]=vadd(prescale,csps.v[i]);
-    Tvnormalize(&rec2m->v[i],&scalem->v[i],sharp_fbighalf);
-    Tvnormalize(&rec2p->v[i],&scalep->v[i],sharp_fbighalf);
+    d->l1p[i] = vzero;
+    d->l1m[i] = vzero;
+    d->l2p[i] = prefac*ccp[i];
+    d->scp[i] = prescale*ccps[i];
+    d->l2m[i] = prefac*csp[i];
+    d->scm[i] = prescale*csps[i];
+    Tvnormalize(&d->l2m[i],&d->scm[i],sharp_fbighalf);
+    Tvnormalize(&d->l2p[i],&d->scp[i],sharp_fbighalf);
 
-    rec2p->v[i]=vmul(rec2p->v[i],ssp.v[i]);
-    scalep->v[i]=vadd(scalep->v[i],ssps.v[i]);
-    rec2m.v[i]=vmul(rec2m.v[i],scp.v[i]);
-    scalem.v[i]=vadd(scalem.v[i],scps.v[i]);
+    d->l2p[i] *= ssp[i];
+    d->scp[i] += ssps[i];
+    d->l2m[i] *= scp[i];
+    d->scm[i] += scps[i];
     if (gen->preMinus_p)
-      rec2p.v[i]=vneg(rec2p.v[i]);
+      d->l2p[i] = vneg(d->l2p[i]);
     if (gen->preMinus_m)
-      rec2m.v[i]=vneg(rec2m.v[i]);
+      d->l2m[i] = vneg(d->l2m[i]);
     if (gen->s&1)
-      rec2p.v[i]=vneg(rec2p.v[i]);
+      d->l2p[i] = vneg(d->l2p[i]);
 
-    Tvnormalize(&rec2m.v[i],&scalem.v[i],sharp_ftol);
-    Tvnormalize(&rec2p.v[i],&scalep.v[i],sharp_ftol);
+    Tvnormalize(&d->l2m[i],&d->scm[i],sharp_ftol);
+    Tvnormalize(&d->l2p[i],&d->scp[i],sharp_ftol);
 
-    below_limit &= vallTrue(vand_mask(vlt(scalem.v[i],limscale),vlt(scalep.v[i],limscale)));
+    below_limit &= vallTrue(vand_mask(vlt(d->scm[i],limscale),vlt(d->scp[i],limscale)));
     }
 
   int l=gen->mhi;
@@ -269,48 +271,56 @@ NOINLINE static void iter_to_ieee_spin (const Tb cth, const Tb sth, int *l_,
     if (l+2>gen->lmax) {*l_=gen->lmax+1;return;}
     for (int i=0; i<nv2; ++i)
       {
-      rec_step(&rec1p.v[i],&rec1m.v[i],&rec2p.v[i],&rec2m.v[i],cth.v[i],fx[l+1]);
-      rec_step(&rec2p.v[i],&rec2m.v[i],&rec1p.v[i],&rec1m.v[i],cth.v[i],fx[l+2]);
-      if (rescale(&rec1p.v[i],&rec2p.v[i],&scalep.v[i],vload(sharp_ftol)) ||
-          rescale(&rec1m.v[i],&rec2m.v[i],&scalem.v[i],vload(sharp_ftol)))
-      below_limit &= vallTrue(vlt(scalep.v[i],limscale)) &&
-                     vallTrue(vlt(scalem.v[i],limscale));
+      rec_step(&d->l1p[i],&d->l1m[i],&d->l2p[i],&d->l2m[i],d->cth[i],fx[l+1]);
+      rec_step(&d->l2p[i],&d->l2m[i],&d->l1p[i],&d->l1m[i],d->cth[i],fx[l+2]);
+      if (rescale(&d->l1p[i],&d->l2p[i],&d->scp[i],vload(sharp_ftol)) ||
+          rescale(&d->l1m[i],&d->l2m[i],&d->scm[i],vload(sharp_ftol)))
+      below_limit &= vallTrue(vlt(d->scp[i],limscale)) &&
+                     vallTrue(vlt(d->scm[i],limscale));
       }
     l+=2;
     }
 
   *l_=l;
-  *rec1p_=rec1p; *rec2p_=rec2p; *scalep_=scalep;
-  *rec1m_=rec1m; *rec2m_=rec2m; *scalem_=scalem;
   }
 
-NOINLINE static void alm2map_spin_kernel(Tb cth, Tbqu * restrict p1,
-  Tbqu * restrict p2, Tb rec1p, Tb rec1m, Tb rec2p, Tb rec2m,
-  const sharp_ylmgen_dbl3 * restrict fx, const dcmplx * restrict alm, int l,
-  int lmax, int nv2)
+NOINLINE static void alm2map_spin_kernel(sxdata_v * restrict d,
+  const sharp_ylmgen_dbl3 * restrict fx, const dcmplx * restrict alm,
+  int l, int lmax, int nv2)
   {
   while (l<=lmax)
     {
-    Tv fx10=vload(fx[l+1].f[0]),fx1=v1load(fx[l+1].f[1]),
+    Tv fx10=vload(fx[l+1].f[0]),fx11=vload(fx[l+1].f[1]),
        fx12=vload(fx[l+1].f[2]);
+    Tv fx20=vload(fx[l+2].f[0]),fx21=vload(fx[l+2].f[1]),
+       fx22=vload(fx[l+2].f[2]);
+    Tv agr1=vload(creal(alm[2*l  ])), agi1=vload(cimag(alm[2*l  ])),
+       acr1=vload(creal(alm[2*l+1])), aci1=vload(cimag(alm[2*l+1]));
+    Tv agr2=vload(creal(alm[2*l+2])), agi2=vload(cimag(alm[2*l+2])),
+       acr2=vload(creal(alm[2*l+3])), aci2=vload(cimag(alm[2*l+3]));
     for (int i=0; i<nvec; ++i)
       {
-      rec1p.v[i] = (cth.v[i]-fx1)*fx0*rec2p.v[i] - fx2*rec1p.v[i];
-      rec1m.v[i] = (cth.v[i]+fx1)*fx0*rec2m.v[i] - fx2*rec1m.v[i];
-      }
-    Z(saddstepb)(p1,p2,rec1p,rec1m,rec2p,rec2m,&alm[2*njobs*l],
-      &alm[2*njobs*(l+1)] NJ2);
-    fx0=vload(fx[l+2].f[0]);fx1=vload(fx[l+2].f[1]);
-    fx2=vload(fx[l+2].f[2]);
-    for (int i=0; i<nvec; ++i)
-      {
-      rec2p.v[i] = (cth.v[i]-fx1)*fx0*rec1p.v[i] - fx2*rec2p.v[i];
-      rec2m.v[i] = (cth.v[i]+fx1)*fx0*rec1m.v[i] - fx2*rec2m.v[i];
+      d->l1p[i] = (d->cth[i]-fx11)*fx10*d->l2p[i] - fx12*d->l1p[i];
+      d->l1m[i] = (d->cth[i]+fx11)*fx10*d->l2m[i] - fx12*d->l1m[i];
+      Tv lw1=d->l2p[i]+d->l2m[i];
+      Tv lx2=d->l1m[i]-d->l1p[i];
+      d->p1pr[i] += agr1*lw1 - aci2*lx2;
+      d->p1pi[i] += agi1*lw1 + acr2*lx2;
+      d->p1mr[i] += acr1*lw1 + agi2*lx2;
+      d->p1mi[i] += aci1*lw1 - agr2*lx2;
+      Tv lx1=d->l2m[i]-d->l2p[i];
+      Tv lw2=d->l1p[i]+d->l1m[i];
+      d->p2pr[i] -= agr2*lw2 - aci1*lx1;
+      d->p2pi[i] += agi2*lw2 + acr1*lx1;
+      d->p2mr[i] += acr2*lw2 + agi1*lx1;
+      d->p2mi[i] -= aci2*lw2 - agr1*lx1;
+      d->l2p[i] = (d->cth[i]-fx21)*fx20*d->l1p[i] - fx22*d->l2p[i];
+      d->l2m[i] = (d->cth[i]+fx21)*fx20*d->l1m[i] - fx22*d->l2m[i];
       }
     l+=2;
     }
-  if (l==lmax)
-    Z(saddstep)(p1, p2, rec2p, rec2m, &alm[2*njobs*l] NJ2);
+//  if (l==lmax)
+//    Z(saddstep)(p1, p2, rec2p, rec2m, &alm[2*njobs*l] NJ2);
   }
 #endif
 
