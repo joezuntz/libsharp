@@ -241,9 +241,9 @@ NOINLINE static void iter_to_ieee_spin (const sharp_Ylmgen_C * restrict gen,
     d->l1p[i] = vzero;
     d->l1m[i] = vzero;
     d->l2p[i] = prefac*ccp[i];
-    d->scp[i] = prescale*ccps[i];
+    d->scp[i] = prescale+ccps[i];
     d->l2m[i] = prefac*csp[i];
-    d->scm[i] = prescale*csps[i];
+    d->scm[i] = prescale+csps[i];
     Tvnormalize(&d->l2m[i],&d->scm[i],sharp_fbighalf);
     Tvnormalize(&d->l2p[i],&d->scp[i],sharp_fbighalf);
 
@@ -270,6 +270,7 @@ NOINLINE static void iter_to_ieee_spin (const sharp_Ylmgen_C * restrict gen,
   while (below_limit)
     {
     if (l+2>gen->lmax) {*l_=gen->lmax+1;return;}
+    below_limit=1;
     for (int i=0; i<nv2; ++i)
       {
       rec_step(&d->l1p[i],&d->l1m[i],&d->l2p[i],&d->l2m[i],d->cth[i],fx[l+1]);
@@ -827,7 +828,6 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
         while (ith<ulim-llim)
           {
           s0data_u d;
-          VZERO(d.s.p1r); VZERO(d.s.p1i); VZERO(d.s.p2r); VZERO(d.s.p2i);
           int nth=0;
           while ((nth<nval)&&(ith<ulim-llim))
             {
@@ -862,8 +862,6 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
         while (ith<ulim-llim)
           {
           sxdata_u d;
-          VZERO(d.s.p1pr); VZERO(d.s.p1pi); VZERO(d.s.p2pr); VZERO(d.s.p2pi);
-          VZERO(d.s.p1mr); VZERO(d.s.p1mi); VZERO(d.s.p2mr); VZERO(d.s.p2mi);
           int nth=0;
           while ((nth<nval)&&(ith<ulim-llim))
             {
