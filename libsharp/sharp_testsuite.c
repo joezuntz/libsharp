@@ -375,7 +375,7 @@ static void check_sign_scale(void)
   UTIL_ASSERT(FAPPROX(map[0][npix-1],-1.234675107554816442e+01,1e-12),
     "error");
 
-#if 0
+#if 1
   sharp_execute(SHARP_ALM2MAP,1,&alm[0],&map[0],tinfo,alms,SHARP_DP,
     NULL,NULL);
   UTIL_ASSERT(FAPPROX(map[0][0     ], 2.750897760535633285e+00,1e-12),
