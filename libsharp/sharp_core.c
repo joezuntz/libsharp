@@ -114,8 +114,8 @@ static void mypow(Tv val, int npow, const double * restrict powlimit,
     do
       {
       if (npow&1)
-        vmuleq(res,val);
-      vmuleq(val,val);
+        res*=val;
+      val*=val;
       }
     while(npow>>=1);
     *resd=res;
@@ -129,12 +129,12 @@ static void mypow(Tv val, int npow, const double * restrict powlimit,
       {
       if (npow&1)
         {
-        vmuleq(res,val);
-        vaddeq(scale,scaleint);
+        res*=val;
+        scale+=scaleint;
         Tvnormalize(&res,&scale,sharp_fbighalf);
         }
-      vmuleq(val,val);
-      vaddeq(scaleint,scaleint);
+      val*=val;
+      scaleint+=scaleint;
       Tvnormalize(&val,&scaleint,sharp_fbighalf);
       }
     while(npow>>=1);

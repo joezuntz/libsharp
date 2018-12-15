@@ -32,7 +32,7 @@
 #ifndef PLANCK_SHARP_GEOMHELPERS_H
 #define PLANCK_SHARP_GEOMHELPERS_H
 
-#include "sharp_lowlevel.h"
+#include "sharp.h"
 
 #ifdef __cplusplus
 extern "C" {

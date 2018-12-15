@@ -33,7 +33,7 @@
 #define PLANCK_SHARP_CXX_H
 
 #include <complex>
-#include "sharp_lowlevel.h"
+#include "sharp.h"
 #include "sharp_geomhelpers.h"
 #include "sharp_almhelpers.h"
 

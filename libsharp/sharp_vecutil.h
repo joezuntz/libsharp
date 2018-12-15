@@ -25,7 +25,7 @@
 /*! \file sharp_vecutil.h
  *  Functionality related to vector instruction support
  *
- *  Copyright (C) 2012,2013 Max-Planck-Society
+ *  Copyright (C) 2012-2018 Max-Planck-Society
  *  \author Martin Reinecke
  */
 

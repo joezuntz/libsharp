@@ -25,7 +25,7 @@
 /*! \file sharp_internal.h
  *  Internally used functionality for the spherical transform library.
  *
- *  Copyright (C) 2006-2013 Max-Planck-Society
+ *  Copyright (C) 2006-2018 Max-Planck-Society
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
@@ -36,6 +36,7 @@
 #error This header file cannot be included from C++, only from C
 #endif
 
+#include <complex.h>
 #include "sharp.h"
 
 #define SHARP_MAXTRANS 100
