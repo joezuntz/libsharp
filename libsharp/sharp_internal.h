@@ -38,6 +38,7 @@
 
 #include <complex.h>
 #include "sharp.h"
+#include "sharp_ylmgen_c.h"
 
 #define SHARP_MAXTRANS 100
 
@@ -59,8 +60,13 @@ typedef struct
   unsigned long long opcnt;
   } sharp_job;
 
-int sharp_get_nv_max (void);
-int sharp_nv_oracle (sharp_jobtype type, int spin);
 int sharp_get_mlim (int lmax, int spin, double sth, double cth);
+
+void inner_loop (sharp_job *job, const int *ispair,const double *cth,
+  const double *sth, int llim, int ulim, sharp_Ylmgen_C *gen, int mi,
+  const int *mlim);
+
+int sharp_veclen(void);
+int sharp_max_nvec(void);
 
 #endif

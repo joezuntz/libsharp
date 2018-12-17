@@ -35,7 +35,6 @@
 #include "sharp_ylmgen_c.h"
 #include "sharp_internal.h"
 #include "c_utils.h"
-#include "sharp_core.h"
 #include "walltime_c.h"
 #include "sharp_almhelpers.h"
 #include "sharp_geomhelpers.h"
@@ -959,9 +958,6 @@ void sharp_set_chunksize_min(int new_chunksize_min)
   { chunksize_min=new_chunksize_min; }
 void sharp_set_nchunks_max(int new_nchunks_max)
   { nchunks_max=new_nchunks_max; }
-
-int sharp_get_nv_max (void)
-{ return 6; }
 
 #ifdef USE_MPI
 #include "sharp_mpi.c"
