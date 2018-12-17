@@ -670,6 +670,114 @@ NOINLINE static void calc_map2alm(sharp_job * restrict job,
   map2alm_kernel(d, rf, alm, l, lmax, nv2);
   }
 
+NOINLINE static void alm2map_deriv1_kernel(sxdata_v * restrict d,
+  const sharp_ylmgen_dbl3 * restrict fx, const dcmplx * restrict alm,
+  int l, int lmax, int nv2)
+  {
+  while (l<=lmax)
+    {
+    Tv fx10=vload(fx[l+1].f[0]),fx11=vload(fx[l+1].f[1]),
+       fx12=vload(fx[l+1].f[2]);
+    Tv fx20=vload(fx[l+2].f[0]),fx21=vload(fx[l+2].f[1]),
+       fx22=vload(fx[l+2].f[2]);
+    Tv ar1=vload(creal(alm[l  ])), ai1=vload(cimag(alm[l  ])),
+       ar2=vload(creal(alm[l+1])), ai2=vload(cimag(alm[l+1]));
+    for (int i=0; i<nv2; ++i)
+      {
+      d->l1p[i] = (d->cth[i]-fx11)*fx10*d->l2p[i] - fx12*d->l1p[i];
+      d->l1m[i] = (d->cth[i]+fx11)*fx10*d->l2m[i] - fx12*d->l1m[i];
+      Tv lw=d->l2p[i]+d->l2m[i];
+      d->p1pr[i] += ar1*lw;
+      d->p1pi[i] += ai1*lw;
+      Tv lx=d->l2m[i]-d->l2p[i];
+      d->p2mr[i] += ai1*lx;
+      d->p2mi[i] -= ar1*lx;
+      lw=d->l1p[i]+d->l1m[i];
+      d->p2pr[i] += ar2*lw;
+      d->p2pi[i] += ai2*lw;
+      lx=d->l1m[i]-d->l1p[i];
+      d->p1mr[i] += ai2*lx;
+      d->p1mi[i] -= ar2*lx;
+      d->l2p[i] = (d->cth[i]-fx21)*fx20*d->l1p[i] - fx22*d->l2p[i];
+      d->l2m[i] = (d->cth[i]+fx21)*fx20*d->l1m[i] - fx22*d->l2m[i];
+      }
+    l+=2;
+    }
+  }
+
+NOINLINE static void calc_alm2map_deriv1(sharp_job * restrict job,
+  const sharp_Ylmgen_C * restrict gen, sxdata_v * restrict d, int nth)
+  {
+  int l,lmax=gen->lmax;
+  int nv2 = (nth+VLEN-1)/VLEN;
+  iter_to_ieee_spin(gen, d, &l, nv2);
+  job->opcnt += (l-gen->mhi) * 10*nth;
+  if (l>lmax) return;
+  job->opcnt += (lmax+1-l) * 20*nth;
+
+  const sharp_ylmgen_dbl3 * restrict fx = gen->fx;
+  const dcmplx * restrict alm=job->almtmp;
+  int full_ieee=1;
+  for (int i=0; i<nv2; ++i)
+    {
+    getCorfac(d->scp[i], &d->cfp[i], gen->cf);
+    getCorfac(d->scm[i], &d->cfm[i], gen->cf);
+    full_ieee &= vallTrue(vge(d->scp[i],vload(sharp_minscale))) &&
+                 vallTrue(vge(d->scm[i],vload(sharp_minscale)));
+    }
+
+  while((!full_ieee) && (l<=lmax))
+    {
+    Tv fx10=vload(fx[l+1].f[0]),fx11=vload(fx[l+1].f[1]),
+       fx12=vload(fx[l+1].f[2]);
+    Tv fx20=vload(fx[l+2].f[0]),fx21=vload(fx[l+2].f[1]),
+       fx22=vload(fx[l+2].f[2]);
+    Tv ar1=vload(creal(alm[l  ])), ai1=vload(cimag(alm[l  ])),
+       ar2=vload(creal(alm[l+1])), ai2=vload(cimag(alm[l+1]));
+    full_ieee=1;
+    for (int i=0; i<nv2; ++i)
+      {
+      d->l1p[i] = (d->cth[i]-fx11)*fx10*d->l2p[i] - fx12*d->l1p[i];
+      d->l1m[i] = (d->cth[i]+fx11)*fx10*d->l2m[i] - fx12*d->l1m[i];
+      Tv lw=d->l2p[i]*d->cfp[i]+d->l2m[i]*d->cfm[i];
+      d->p1pr[i] += ar1*lw;
+      d->p1pi[i] += ai1*lw;
+      Tv lx=d->l2m[i]*d->cfm[i]-d->l2p[i]*d->cfp[i];
+      d->p2mr[i] += ai1*lx;
+      d->p2mi[i] -= ar1*lx;
+      lw=d->l1p[i]*d->cfp[i]+d->l1m[i]*d->cfm[i];
+      d->p2pr[i] += ar2*lw;
+      d->p2pi[i] += ai2*lw;
+      lx=d->l1m[i]*d->cfm[i]-d->l1p[i]*d->cfp[i];
+      d->p1mr[i] += ai2*lx;
+      d->p1mi[i] -= ar2*lx;
+      d->l2p[i] = (d->cth[i]-fx21)*fx20*d->l1p[i] - fx22*d->l2p[i];
+      d->l2m[i] = (d->cth[i]+fx21)*fx20*d->l1m[i] - fx22*d->l2m[i];
+      if (rescale(&d->l1p[i], &d->l2p[i], &d->scp[i], vload(sharp_ftol)))
+        {
+        getCorfac(d->scp[i], &d->cfp[i], gen->cf);
+        full_ieee &= vallTrue(vge(d->scp[i],vload(sharp_minscale)));
+        }
+      if (rescale(&d->l1m[i], &d->l2m[i], &d->scm[i], vload(sharp_ftol)))
+        {
+        getCorfac(d->scm[i], &d->cfm[i], gen->cf);
+        full_ieee &= vallTrue(vge(d->scm[i],vload(sharp_minscale)));
+        }
+      }
+    l+=2;
+    }
+  if (l>lmax) return;
+
+  for (int i=0; i<nv2; ++i)
+    {
+    d->l1p[i] *= d->cfp[i];
+    d->l2p[i] *= d->cfp[i];
+    d->l1m[i] *= d->cfm[i];
+    d->l2m[i] *= d->cfm[i];
+    }
+  alm2map_deriv1_kernel(d, fx, alm, l, lmax, nv2);
+  }
+
 
 #define VZERO(var) do { memset(&(var),0,sizeof(var)); } while(0)
 
@@ -682,10 +790,8 @@ NOINLINE static void inner_loop_a2m(sharp_job *job, const int *ispair,
 
   switch (job->type)
     {
-    case SHARP_ALM2MAP_DERIV1:
-      UTIL_FAIL("derivatives currently not supported");
-      break;
     case SHARP_ALM2MAP:
+    case SHARP_ALM2MAP_DERIV1:
       {
       if (job->spin==0)
         {
@@ -772,7 +878,9 @@ NOINLINE static void inner_loop_a2m(sharp_job *job, const int *ispair,
               d.s.p1pr[i]=d.s.p1pi[i]=d.s.p2pr[i]=d.s.p2pi[i]=0.;
               d.s.p1mr[i]=d.s.p1mi[i]=d.s.p2mr[i]=d.s.p2mi[i]=0.;
               }
-            calc_alm2map_spin (job, gen, &d.v, nth);
+            (job->type==SHARP_ALM2MAP) ?
+              calc_alm2map_spin  (job, gen, &d.v, nth) :
+              calc_alm2map_deriv1(job, gen, &d.v, nth);
             for (int i=0; i<nth; ++i)
               {
               int tgt=itgt[i];

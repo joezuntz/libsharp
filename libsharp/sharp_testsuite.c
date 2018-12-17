@@ -405,7 +405,6 @@ static void check_sign_scale(void)
   UTIL_ASSERT(FAPPROX(map[1][npix-1],-1.863257892248353897e+01,1e-12),
     "error");
 
-#if 0
   sharp_execute(SHARP_ALM2MAP_DERIV1,1,&alm[0],&map[0],tinfo,alms,
     SHARP_DP,NULL,NULL);
   UTIL_ASSERT(FAPPROX(map[0][0     ],-6.859393905369091105e-01,1e-11),
@@ -420,7 +419,6 @@ static void check_sign_scale(void)
     "error");
   UTIL_ASSERT(FAPPROX(map[1][npix-1], 7.821618677689795049e+02,1e-12),
     "error");
-#endif
 
   DEALLOC2D(map);
   DEALLOC2D(alm);
