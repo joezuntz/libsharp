@@ -40,22 +40,20 @@
 
 typedef complex double dcmplx;
 
-#define nvec (128/VLEN)
+#define nv0 (64/VLEN)
+#define nvx (128/VLEN)
 
-typedef union
-  { Tv v; double s[VLEN]; } Tvu;
-
-typedef Tv Tbv[nvec];
-typedef double Tbs[nvec*VLEN];
+typedef Tv Tbv0[nv0];
+typedef double Tbs0[nv0*VLEN];
 
 typedef struct
   {
-  Tbv sth, corfac, scale, lam1, lam2, cth, p1r, p1i, p2r, p2i;
+  Tbv0 sth, corfac, scale, lam1, lam2, cth, p1r, p1i, p2r, p2i;
   } s0data_v;
 
 typedef struct
   {
-  Tbs sth, corfac, scale, lam1, lam2, cth, p1r, p1i, p2r, p2i;
+  Tbs0 sth, corfac, scale, lam1, lam2, cth, p1r, p1i, p2r, p2i;
   } s0data_s;
 
 typedef union
@@ -64,16 +62,19 @@ typedef union
   s0data_s s;
   } s0data_u;
 
+typedef Tv Tbvx[nvx];
+typedef double Tbsx[nvx*VLEN];
+
 typedef struct
   {
-  Tbv sth, cfp, cfm, scp, scm, l1p, l2p, l1m, l2m, cth,
-      p1pr, p1pi, p2pr, p2pi, p1mr, p1mi, p2mr, p2mi;
+  Tbvx sth, cfp, cfm, scp, scm, l1p, l2p, l1m, l2m, cth,
+       p1pr, p1pi, p2pr, p2pi, p1mr, p1mi, p2mr, p2mi;
   } sxdata_v;
 
 typedef struct
   {
-  Tbs sth, cfp, cfm, scp, scm, l1p, l2p, l1m, l2m, cth,
-      p1pr, p1pi, p2pr, p2pi, p1mr, p1mi, p2mr, p2mi;
+  Tbsx sth, cfp, cfm, scp, scm, l1p, l2p, l1m, l2m, cth,
+       p1pr, p1pi, p2pr, p2pi, p1mr, p1mi, p2mr, p2mi;
   } sxdata_s;
 
 typedef union
@@ -146,6 +147,9 @@ static void mypow(Tv val, int npow, const double * restrict powlimit,
 static inline void getCorfac(Tv scale, Tv * restrict corfac,
   const double * restrict cf)
   {
+  typedef union
+    { Tv v; double s[VLEN]; } Tvu;
+
   Tvu sc, corf;
   sc.v=scale;
   for (int i=0; i<VLEN; ++i)
@@ -199,16 +203,6 @@ NOINLINE static void iter_to_ieee(const sharp_Ylmgen_C * restrict gen,
     l+=2;
     }
   *l_=l;
-  }
-
-#if 1
-static inline void rec_step (Tv * restrict rxp, Tv * restrict rxm,
-  Tv * restrict ryp, Tv * restrict rym, const Tv cth,
-  const sharp_ylmgen_dbl3 fx)
-  {
-  Tv fx0=vload(fx.f[0]),fx1=vload(fx.f[1]),fx2=vload(fx.f[2]);
-  *rxp = (cth-fx1)*fx0* *ryp - fx2* *rxp;
-  *rxm = (cth+fx1)*fx0* *rym - fx2* *rxm;
   }
 
 NOINLINE static void iter_to_ieee_spin (const sharp_Ylmgen_C * restrict gen,
@@ -265,10 +259,16 @@ NOINLINE static void iter_to_ieee_spin (const sharp_Ylmgen_C * restrict gen,
     {
     if (l+2>gen->lmax) {*l_=gen->lmax+1;return;}
     below_limit=1;
+    Tv fx10=vload(fx[l+1].f[0]),fx11=vload(fx[l+1].f[1]),
+       fx12=vload(fx[l+1].f[2]);
+    Tv fx20=vload(fx[l+2].f[0]),fx21=vload(fx[l+2].f[1]),
+       fx22=vload(fx[l+2].f[2]);
     for (int i=0; i<nv2; ++i)
       {
-      rec_step(&d->l1p[i],&d->l1m[i],&d->l2p[i],&d->l2m[i],d->cth[i],fx[l+1]);
-      rec_step(&d->l2p[i],&d->l2m[i],&d->l1p[i],&d->l1m[i],d->cth[i],fx[l+2]);
+      d->l1p[i] = (d->cth[i]-fx11)*fx10*d->l2p[i] - fx12*d->l1p[i];
+      d->l1m[i] = (d->cth[i]+fx11)*fx10*d->l2m[i] - fx12*d->l1m[i];
+      d->l2p[i] = (d->cth[i]-fx21)*fx20*d->l1p[i] - fx22*d->l2p[i];
+      d->l2m[i] = (d->cth[i]+fx21)*fx20*d->l1m[i] - fx22*d->l2m[i];
       if (rescale(&d->l1p[i],&d->l2p[i],&d->scp[i],vload(sharp_ftol)) ||
           rescale(&d->l1m[i],&d->l2m[i],&d->scm[i],vload(sharp_ftol)))
         below_limit &= vallTrue(vlt(d->scp[i],limscale)) &&
@@ -368,7 +368,7 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
   int l,lmax=gen->lmax;
   int nv2 = (nth+VLEN-1)/VLEN;
   iter_to_ieee_spin(gen, d, &l, nv2);
-  job->opcnt += (l-gen->m) * 10*nth;
+  job->opcnt += (l-gen->mhi) * 10*nth;
   if (l>lmax) return;
   job->opcnt += (lmax+1-l) * 28*nth;
 
@@ -406,10 +406,10 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
       d->p1mi[i] += aci1*lw1 - agr2*lx2;
       Tv lx1=d->l2m[i]*d->cfm[i] - d->l2p[i]*d->cfp[i];
       Tv lw2=d->l1p[i]*d->cfp[i] + d->l1m[i]*d->cfm[i];
-      d->p2pr[i] -= agr2*lw2 - aci1*lx1;
+      d->p2pr[i] += agr2*lw2 - aci1*lx1;
       d->p2pi[i] += agi2*lw2 + acr1*lx1;
       d->p2mr[i] += acr2*lw2 + agi1*lx1;
-      d->p2mi[i] -= aci2*lw2 - agr1*lx1;
+      d->p2mi[i] += aci2*lw2 - agr1*lx1;
       d->l2p[i] = (d->cth[i]-fx21)*fx20*d->l1p[i] - fx22*d->l2p[i];
       d->l2m[i] = (d->cth[i]+fx21)*fx20*d->l1m[i] - fx22*d->l2m[i];
       if (rescale(&d->l1p[i], &d->l2p[i], &d->scp[i], vload(sharp_ftol)))
@@ -443,7 +443,7 @@ NOINLINE static void calc_map2alm_spin (sharp_job * restrict job,
   int l,lmax=gen->lmax;
   int nv2 = (nth+VLEN-1)/VLEN;
   iter_to_ieee_spin(gen, d, &l, nv2);
-  job->opcnt += (l-gen->m) * 10*nth;
+  job->opcnt += (l-gen->mhi) * 10*nth;
   if (l>lmax) return;
   job->opcnt += (lmax+1-l) * 28*nth;
 
@@ -519,7 +519,6 @@ NOINLINE static void calc_map2alm_spin (sharp_job * restrict job,
     }
   map2alm_spin_kernel(d, fx, alm, l, lmax, nv2);
   }
-#endif
 
 NOINLINE static void alm2map_kernel(s0data_v * restrict d,
   const sharp_ylmgen_dbl2 * restrict rf, const dcmplx * restrict alm,
@@ -678,19 +677,21 @@ NOINLINE static void inner_loop_a2m(sharp_job *job, const int *ispair,
   const double *cth_, const double *sth_, int llim, int ulim,
   sharp_Ylmgen_C *gen, int mi, const int *mlim)
   {
-  const int nval=nvec*VLEN;
   const int m = job->ainfo->mval[mi];
   sharp_Ylmgen_prepare (gen, m);
 
   switch (job->type)
     {
-    case SHARP_ALM2MAP:
     case SHARP_ALM2MAP_DERIV1:
+      UTIL_FAIL("derivatives currently not supported");
+      break;
+    case SHARP_ALM2MAP:
       {
       if (job->spin==0)
         {
+        const int nval=nv0*VLEN;
         int ith=0;
-        int itgt[nvec*VLEN];
+        int itgt[nval];
         while (ith<ulim-llim)
           {
           s0data_u d;
@@ -736,8 +737,9 @@ NOINLINE static void inner_loop_a2m(sharp_job *job, const int *ispair,
         }
       else
         {
+        const int nval=nvx*VLEN;
         int ith=0;
-        int itgt[nvec*VLEN];
+        int itgt[nval];
         while (ith<ulim-llim)
           {
           sxdata_u d;
@@ -808,7 +810,6 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
   const double *cth_, const double *sth_, int llim, int ulim,
   sharp_Ylmgen_C *gen, int mi, const int *mlim)
   {
-  const int nval=nvec*VLEN;
   const int m = job->ainfo->mval[mi];
   sharp_Ylmgen_prepare (gen, m);
 
@@ -818,6 +819,7 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
       {
       if (job->spin==0)
         {
+        const int nval=nv0*VLEN;
         int ith=0;
         while (ith<ulim-llim)
           {
@@ -852,6 +854,7 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
         }
       else
         {
+        const int nval=nvx*VLEN;
         int ith=0;
         while (ith<ulim-llim)
           {
@@ -919,5 +922,5 @@ int sharp_veclen(void)
 
 int sharp_max_nvec(void)
   {
-  return nvec;
+  return nv0;
   }

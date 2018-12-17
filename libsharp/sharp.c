@@ -588,7 +588,7 @@ NOINLINE static void alm2almtmp (sharp_job *job, int lmax, int mi)
     }
   else
     memset (job->almtmp+job->nalm*job->ainfo->mval[mi], 0,
-      job->nalm*(lmax+1-job->ainfo->mval[mi])*sizeof(dcmplx));
+      job->nalm*(lmax+2-job->ainfo->mval[mi])*sizeof(dcmplx));
 
 #undef COPY_LOOP
   }

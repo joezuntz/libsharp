@@ -24,7 +24,7 @@
 
 /*  \file sharp_testsuite.c
  *
- *  Copyright (C) 2012-2013 Max-Planck-Society
+ *  Copyright (C) 2012-2018 Max-Planck-Society
  *  \author Martin Reinecke
  */
 
@@ -375,7 +375,6 @@ static void check_sign_scale(void)
   UTIL_ASSERT(FAPPROX(map[0][npix-1],-1.234675107554816442e+01,1e-12),
     "error");
 
-#if 1
   sharp_execute(SHARP_ALM2MAP,1,&alm[0],&map[0],tinfo,alms,SHARP_DP,
     NULL,NULL);
   UTIL_ASSERT(FAPPROX(map[0][0     ], 2.750897760535633285e+00,1e-12),
@@ -406,6 +405,7 @@ static void check_sign_scale(void)
   UTIL_ASSERT(FAPPROX(map[1][npix-1],-1.863257892248353897e+01,1e-12),
     "error");
 
+#if 0
   sharp_execute(SHARP_ALM2MAP_DERIV1,1,&alm[0],&map[0],tinfo,alms,
     SHARP_DP,NULL,NULL);
   UTIL_ASSERT(FAPPROX(map[0][0     ],-6.859393905369091105e-01,1e-11),
@@ -430,7 +430,7 @@ static void check_sign_scale(void)
   }
 
 static void do_sht (sharp_geom_info *ginfo, sharp_alm_info *ainfo,
-  int spin, int nv, double **err_abs, double **err_rel,
+  int spin, double **err_abs, double **err_rel,
   double *t_a2m, double *t_m2a, unsigned long long *op_a2m,
   unsigned long long *op_m2a)
   {
@@ -450,20 +450,20 @@ static void do_sht (sharp_geom_info *ginfo, sharp_alm_info *ainfo,
 
 #ifdef USE_MPI
   sharp_execute_mpi(MPI_COMM_WORLD,SHARP_ALM2MAP,spin,&alm[0],&map[0],ginfo,
-    ainfo, SHARP_DP|SHARP_ADD|nv,t_a2m,op_a2m);
+    ainfo, SHARP_DP|SHARP_ADD,t_a2m,op_a2m);
 #else
   sharp_execute(SHARP_ALM2MAP,spin,&alm[0],&map[0],ginfo,ainfo,
-    SHARP_DP|nv,t_a2m,op_a2m);
+    SHARP_DP,t_a2m,op_a2m);
 #endif
   if (t_a2m!=NULL) *t_a2m=maxTime(*t_a2m);
   if (op_a2m!=NULL) *op_a2m=totalops(*op_a2m);
   double *sqsum=get_sqsum_and_invert(alm,nalms,ncomp);
 #ifdef USE_MPI
   sharp_execute_mpi(MPI_COMM_WORLD,SHARP_MAP2ALM,spin,&alm[0],&map[0],ginfo,
-    ainfo,SHARP_DP|SHARP_ADD|nv,t_m2a,op_m2a);
+    ainfo,SHARP_DP|SHARP_ADD,t_m2a,op_m2a);
 #else
   sharp_execute(SHARP_MAP2ALM,spin,&alm[0],&map[0],ginfo,ainfo,
-    SHARP_DP|SHARP_ADD|nv,t_m2a,op_m2a);
+    SHARP_DP|SHARP_ADD,t_m2a,op_m2a);
 #endif
   if (t_m2a!=NULL) *t_m2a=maxTime(*t_m2a);
   if (op_m2a!=NULL) *op_m2a=totalops(*op_m2a);
@@ -475,11 +475,11 @@ static void do_sht (sharp_geom_info *ginfo, sharp_alm_info *ainfo,
   }
 
 static void check_accuracy (sharp_geom_info *ginfo, sharp_alm_info *ainfo,
-  int spin, int nv)
+  int spin)
   {
   int ncomp = (spin==0) ? 1 : 2;
   double *err_abs, *err_rel;
-  do_sht (ginfo, ainfo, spin, nv, &err_abs, &err_rel, NULL, NULL,
+  do_sht (ginfo, ainfo, spin, &err_abs, &err_rel, NULL, NULL,
     NULL, NULL);
   for (int i=0; i<ncomp; ++i)
     UTIL_ASSERT((err_rel[i]<1e-10) && (err_abs[i]<1e-10),"error");
@@ -501,16 +501,11 @@ static void sharp_acctest(void)
   sharp_alm_info *ainfo;
   int lmax=127, mmax=127, nlat=128, nlon=256;
   get_infos ("gauss", lmax, &mmax, &nlat, &nlon, &ginfo, &ainfo);
-  for (int nv=1; nv<=6; ++nv)
-    {
-    check_accuracy(ginfo,ainfo,0,nv);
-#if 0
-    check_accuracy(ginfo,ainfo,1,nv);
-    check_accuracy(ginfo,ainfo,2,nv);
-    check_accuracy(ginfo,ainfo,3,nv);
-    check_accuracy(ginfo,ainfo,30,nv);
-#endif
-    }
+  check_accuracy(ginfo,ainfo,0);
+  check_accuracy(ginfo,ainfo,1);
+  check_accuracy(ginfo,ainfo,2);
+  check_accuracy(ginfo,ainfo,3);
+  check_accuracy(ginfo,ainfo,30);
   sharp_destroy_alm_info(ainfo);
   sharp_destroy_geom_info(ginfo);
   if (mytask==0) printf("Passed.\n\n");
@@ -544,7 +539,7 @@ static void sharp_test (int argc, const char **argv)
     {
     ++nrpt;
     double ta2m2, tm2a2;
-    do_sht (ginfo, ainfo, spin, 0, &err_abs, &err_rel, &ta2m2, &tm2a2,
+    do_sht (ginfo, ainfo, spin, &err_abs, &err_rel, &ta2m2, &tm2a2,
       &op_a2m, &op_m2a);
     if (ta2m2<t_a2m) t_a2m=ta2m2;
     if (tm2a2<t_m2a) t_m2a=tm2a2;
@@ -604,68 +599,6 @@ static void sharp_test (int argc, const char **argv)
   DEALLOC(err_rel);
   }
 
-static void sharp_bench (int argc, const char **argv)
-  {
-  if (mytask==0) sharp_announce("sharp_bench");
-  UTIL_ASSERT(argc>=8,"usage: grid lmax mmax geom1 geom2 spin");
-  int lmax=atoi(argv[3]);
-  int mmax=atoi(argv[4]);
-  int gpar1=atoi(argv[5]);
-  int gpar2=atoi(argv[6]);
-  int spin=atoi(argv[7]);
-
-  if (mytask==0) printf("Testing map analysis accuracy.\n");
-  if (mytask==0) printf("spin=%d\n", spin);
-
-  sharp_geom_info *ginfo;
-  sharp_alm_info *ainfo;
-  get_infos (argv[2], lmax, &mmax, &gpar1, &gpar2, &ginfo, &ainfo);
-
-  double ta2m_auto=1e30, tm2a_auto=1e30, ta2m_min=1e30, tm2a_min=1e30;
-  unsigned long long opa2m_min=0, opm2a_min=0;
-  int nvmin_a2m=-1, nvmin_m2a=-1;
-  for (int nv=0; nv<=6; ++nv)
-    {
-    int ntries=0;
-    double tacc=0;
-    do
-      {
-      double t_a2m, t_m2a;
-      unsigned long long op_a2m, op_m2a;
-      double *err_abs,*err_rel;
-      do_sht (ginfo, ainfo, spin, nv, &err_abs, &err_rel,
-        &t_a2m, &t_m2a, &op_a2m, &op_m2a);
-
-      DEALLOC(err_abs);
-      DEALLOC(err_rel);
-      tacc+=t_a2m+t_m2a;
-      ++ntries;
-      if (nv==0)
-        {
-        if (t_a2m<ta2m_auto) ta2m_auto=t_a2m;
-        if (t_m2a<tm2a_auto) tm2a_auto=t_m2a;
-        }
-      else
-        {
-        if (t_a2m<ta2m_min) { nvmin_a2m=nv; ta2m_min=t_a2m; opa2m_min=op_a2m; }
-        if (t_m2a<tm2a_min) { nvmin_m2a=nv; tm2a_min=t_m2a; opm2a_min=op_m2a; }
-        }
-      } while((ntries<2)||(tacc<3.));
-    }
-  if (mytask==0)
-    {
-    printf("a2m: nvmin=%d tmin=%fs speedup=%.2f%% perf=%.2fGFlops/s\n",
-      nvmin_a2m,ta2m_min,100.*(ta2m_auto-ta2m_min)/ta2m_auto,
-      1e-9*opa2m_min/ta2m_min);
-    printf("m2a: nvmin=%d tmin=%fs speedup=%.2f%% perf=%.2fGFlops/s\n",
-      nvmin_m2a,tm2a_min,100.*(tm2a_auto-tm2a_min)/tm2a_auto,
-      1e-9*opm2a_min/tm2a_min);
-    }
-
-  sharp_destroy_alm_info(ainfo);
-  sharp_destroy_geom_info(ginfo);
-  }
-
 int main(int argc, const char **argv)
   {
 #ifdef USE_MPI
@@ -682,8 +615,6 @@ int main(int argc, const char **argv)
     sharp_acctest();
   else if (strcmp(argv[1],"test")==0)
     sharp_test(argc,argv);
-  else if (strcmp(argv[1],"bench")==0)
-    sharp_bench(argc,argv);
   else
     UTIL_FAIL("unknown command");
 
