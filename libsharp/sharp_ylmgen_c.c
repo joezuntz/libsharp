@@ -85,15 +85,15 @@ void sharp_Ylmgen_init (sharp_Ylmgen_C *gen, int l_max, int m_max, int spin)
   else
     {
     gen->m=gen->mlo=gen->mhi=-1234567890;
-    ALLOC(gen->fx,sharp_ylmgen_dbl3,gen->lmax+2);
-    for (int m=0; m<gen->lmax+2; ++m)
+    ALLOC(gen->fx,sharp_ylmgen_dbl3,gen->lmax+3);
+    for (int m=0; m<gen->lmax+3; ++m)
       gen->fx[m].f[0]=gen->fx[m].f[1]=gen->fx[m].f[2]=0.;
-    ALLOC(gen->inv,double,gen->lmax+1);
+    ALLOC(gen->inv,double,gen->lmax+2);
     gen->inv[0]=0;
-    for (int m=1; m<gen->lmax+1; ++m) gen->inv[m]=1./m;
-    ALLOC(gen->flm1,double,2*gen->lmax+1);
-    ALLOC(gen->flm2,double,2*gen->lmax+1);
-    for (int m=0; m<2*gen->lmax+1; ++m)
+    for (int m=1; m<gen->lmax+2; ++m) gen->inv[m]=1./m;
+    ALLOC(gen->flm1,double,2*gen->lmax+3);
+    ALLOC(gen->flm2,double,2*gen->lmax+3);
+    for (int m=0; m<2*gen->lmax+3; ++m)
       {
       gen->flm1[m] = sqrt(1./(m+1.));
       gen->flm2[m] = sqrt(m/(m+1.));
@@ -176,7 +176,7 @@ void sharp_Ylmgen_prepare (sharp_Ylmgen_C *gen, int m)
 
     if (!ms_similar)
       {
-      for (int l=gen->mhi; l<gen->lmax; ++l)
+      for (int l=gen->mhi; l<gen->lmax+1; ++l)
         {
         double t = gen->flm1[l+gen->m]*gen->flm1[l-gen->m]
                   *gen->flm1[l+gen->s]*gen->flm1[l-gen->s];

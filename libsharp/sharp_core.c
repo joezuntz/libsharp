@@ -40,7 +40,7 @@
 
 typedef complex double dcmplx;
 
-#define nvec (256/VLEN)
+#define nvec (128/VLEN)
 
 typedef union
   { Tv v; double s[VLEN]; } Tvu;
@@ -215,42 +215,36 @@ NOINLINE static void iter_to_ieee_spin (const sharp_Ylmgen_C * restrict gen,
   sxdata_v * restrict d, int * restrict l_, int nv2)
   {
   const sharp_ylmgen_dbl3 * restrict fx = gen->fx;
-  Tbv ccp, ccps, ssp, ssps, csp, csps, scp, scps;
   Tv prefac=vload(gen->prefac[gen->m]),
      prescale=vload(gen->fscale[gen->m]);
   Tv limscale=vload(sharp_limscale);
   int below_limit=1;
   for (int i=0; i<nv2; ++i)
     {
-    Tv cth2, sth2;
-    cth2=vsqrt((vone+d->cth[i])*vload(0.5));
-    cth2=vmax(cth2,vload(1e-15));
-    sth2=vsqrt((vone-d->cth[i])*vload(0.5));
-    sth2=vmax(sth2,vload(1e-15));
+    Tv cth2=vmax(vload(1e-15),vsqrt((vone+d->cth[i])*vload(0.5)));
+    Tv sth2=vmax(vload(1e-15),vsqrt((vone-d->cth[i])*vload(0.5)));
     Tm mask=vlt(d->sth[i],vzero);
-    Tm cmask=vand_mask(mask,vlt(d->cth[i],vzero));
-    vmuleq_mask(cmask,cth2,vload(-1.));
-    Tm smask=vand_mask(mask,vgt(d->cth[i],vzero));
-    vmuleq_mask(smask,sth2,vload(-1.));
+    vmuleq_mask(vand_mask(mask,vlt(d->cth[i],vzero)),cth2,vload(-1.));
+    vmuleq_mask(vand_mask(mask,vgt(d->cth[i],vzero)),sth2,vload(-1.));
 
-    mypow(cth2,gen->cosPow,gen->powlimit,&ccp[i],&ccps[i]);
-    mypow(sth2,gen->sinPow,gen->powlimit,&ssp[i],&ssps[i]);
-    mypow(cth2,gen->sinPow,gen->powlimit,&csp[i],&csps[i]);
-    mypow(sth2,gen->cosPow,gen->powlimit,&scp[i],&scps[i]);
+    Tv ccp, ccps, ssp, ssps, csp, csps, scp, scps;
+    mypow(cth2,gen->cosPow,gen->powlimit,&ccp,&ccps);
+    mypow(sth2,gen->sinPow,gen->powlimit,&ssp,&ssps);
+    mypow(cth2,gen->sinPow,gen->powlimit,&csp,&csps);
+    mypow(sth2,gen->cosPow,gen->powlimit,&scp,&scps);
 
     d->l1p[i] = vzero;
     d->l1m[i] = vzero;
-    d->l2p[i] = prefac*ccp[i];
-    d->scp[i] = prescale+ccps[i];
-    d->l2m[i] = prefac*csp[i];
-    d->scm[i] = prescale+csps[i];
+    d->l2p[i] = prefac*ccp;
+    d->scp[i] = prescale+ccps;
+    d->l2m[i] = prefac*csp;
+    d->scm[i] = prescale+csps;
     Tvnormalize(&d->l2m[i],&d->scm[i],sharp_fbighalf);
     Tvnormalize(&d->l2p[i],&d->scp[i],sharp_fbighalf);
-
-    d->l2p[i] *= ssp[i];
-    d->scp[i] += ssps[i];
-    d->l2m[i] *= scp[i];
-    d->scm[i] += scps[i];
+    d->l2p[i] *= ssp;
+    d->scp[i] += ssps;
+    d->l2m[i] *= scp;
+    d->scm[i] += scps;
     if (gen->preMinus_p)
       d->l2p[i] = vneg(d->l2p[i]);
     if (gen->preMinus_m)
@@ -277,8 +271,8 @@ NOINLINE static void iter_to_ieee_spin (const sharp_Ylmgen_C * restrict gen,
       rec_step(&d->l2p[i],&d->l2m[i],&d->l1p[i],&d->l1m[i],d->cth[i],fx[l+2]);
       if (rescale(&d->l1p[i],&d->l2p[i],&d->scp[i],vload(sharp_ftol)) ||
           rescale(&d->l1m[i],&d->l2m[i],&d->scm[i],vload(sharp_ftol)))
-      below_limit &= vallTrue(vlt(d->scp[i],limscale)) &&
-                     vallTrue(vlt(d->scm[i],limscale));
+        below_limit &= vallTrue(vlt(d->scp[i],limscale)) &&
+                       vallTrue(vlt(d->scm[i],limscale));
       }
     l+=2;
     }
@@ -312,10 +306,10 @@ NOINLINE static void alm2map_spin_kernel(sxdata_v * restrict d,
       d->p1mi[i] += aci1*lw1 - agr2*lx2;
       Tv lx1=d->l2m[i]-d->l2p[i];
       Tv lw2=d->l1p[i]+d->l1m[i];
-      d->p2pr[i] -= agr2*lw2 - aci1*lx1;
+      d->p2pr[i] += agr2*lw2 - aci1*lx1;
       d->p2pi[i] += agi2*lw2 + acr1*lx1;
       d->p2mr[i] += acr2*lw2 + agi1*lx1;
-      d->p2mi[i] -= aci2*lw2 - agr1*lx1;
+      d->p2mi[i] += aci2*lw2 - agr1*lx1;
       d->l2p[i] = (d->cth[i]-fx21)*fx20*d->l1p[i] - fx22*d->l2p[i];
       d->l2m[i] = (d->cth[i]+fx21)*fx20*d->l1m[i] - fx22*d->l2m[i];
       }
