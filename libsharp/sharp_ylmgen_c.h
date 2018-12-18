@@ -58,7 +58,8 @@ typedef struct
   double *mfac;
   sharp_ylmgen_dbl2 *rf;
 
-double *eps, *alpha, *a, *b;
+double *eps, *alpha;
+sharp_ylmgen_dbl2 *ab;
 
 /* used if s!=0 */
   int sinPow, cosPow, preMinus_p, preMinus_m;

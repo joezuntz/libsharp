@@ -83,8 +83,7 @@ void sharp_Ylmgen_init (sharp_Ylmgen_C *gen, int l_max, int m_max, int spin)
       }
 gen->eps=RALLOC(double, gen->lmax+10);
 gen->alpha=RALLOC(double, gen->lmax/2+10);
-gen->a=RALLOC(double, gen->lmax/2+10);
-gen->b=RALLOC(double, gen->lmax/2+10);
+gen->ab=RALLOC(sharp_ylmgen_dbl2, gen->lmax/2+10);
     }
   else
     {
@@ -143,8 +142,7 @@ void sharp_Ylmgen_destroy (sharp_Ylmgen_C *gen)
     DEALLOC(gen->iroot);
 DEALLOC(gen->eps);
 DEALLOC(gen->alpha);
-DEALLOC(gen->a);
-DEALLOC(gen->b);
+DEALLOC(gen->ab);
     }
   else
     {
@@ -181,9 +179,9 @@ for (int il=1, l=m+2; l<gen->lmax+5; ++il, l+=2)
   gen->alpha[il+1]= ((il&1) ? -1 : 1)/(gen->eps[l+2]*gen->eps[l+3]*gen->alpha[il]);
 for (int il=0, l=m; l<gen->lmax+5; ++il, l+=2)
   {
-  gen->a[il] = ((il&1) ? -1 : 1)*gen->alpha[il]*gen->alpha[il];
+  gen->ab[il].f[0] = ((il&1) ? -1 : 1)*gen->alpha[il]*gen->alpha[il];
   double t1 = gen->eps[l+2], t2 = gen->eps[l+1];
-  gen->b[il] = -gen->a[il]*(t1*t1+t2*t2);
+  gen->ab[il].f[1] = -gen->ab[il].f[0]*(t1*t1+t2*t2);
   }
     }
   else
