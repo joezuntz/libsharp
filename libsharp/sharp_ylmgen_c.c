@@ -74,13 +74,17 @@ void sharp_Ylmgen_init (sharp_Ylmgen_C *gen, int l_max, int m_max, int spin)
     gen->mfac[0] = inv_sqrt4pi;
     for (int m=1; m<=gen->mmax; ++m)
       gen->mfac[m] = gen->mfac[m-1]*sqrt((2*m+1.)/(2*m));
-    gen->root = RALLOC(double,2*gen->lmax+5);
-    gen->iroot = RALLOC(double,2*gen->lmax+5);
-    for (int m=0; m<2*gen->lmax+5; ++m)
+    gen->root = RALLOC(double,2*gen->lmax+6);
+    gen->iroot = RALLOC(double,2*gen->lmax+6);
+    for (int m=0; m<2*gen->lmax+6; ++m)
       {
       gen->root[m] = sqrt(m);
       gen->iroot[m] = (m==0) ? 0. : 1./gen->root[m];
       }
+gen->eps=RALLOC(double, gen->lmax+10);
+gen->alpha=RALLOC(double, gen->lmax/2+10);
+gen->a=RALLOC(double, gen->lmax/2+10);
+gen->b=RALLOC(double, gen->lmax/2+10);
     }
   else
     {
@@ -137,6 +141,10 @@ void sharp_Ylmgen_destroy (sharp_Ylmgen_C *gen)
     DEALLOC(gen->mfac);
     DEALLOC(gen->root);
     DEALLOC(gen->iroot);
+DEALLOC(gen->eps);
+DEALLOC(gen->alpha);
+DEALLOC(gen->a);
+DEALLOC(gen->b);
     }
   else
     {
@@ -165,6 +173,18 @@ void sharp_Ylmgen_prepare (sharp_Ylmgen_C *gen, int m)
       gen->rf[l].f[0] = tmp*gen->root[2*l+1];
       gen->rf[l].f[1] = tmp*gen->root[l+m]*gen->root[l-m]*gen->iroot[2*l-1];
       }
+for (int l=m; l<gen->lmax+10; ++l)
+  gen->eps[l] = sqrt((l*l-m*m)/(4.*l*l-1));
+gen->alpha[0] = 1./gen->eps[m+1];
+gen->alpha[1] = gen->eps[m+1]/(gen->eps[m+2]*gen->eps[m+3]);
+for (int il=1, l=m+2; l<gen->lmax+5; ++il, l+=2)
+  gen->alpha[il+1]= ((il&1) ? -1 : 1)/(gen->eps[l+2]*gen->eps[l+3]*gen->alpha[il]);
+for (int il=0, l=m; l<gen->lmax+5; ++il, l+=2)
+  {
+  gen->a[il] = ((il&1) ? -1 : 1)*gen->alpha[il]*gen->alpha[il];
+  double t1 = gen->eps[l+2], t2 = gen->eps[l+1];
+  gen->b[il] = -gen->a[il]*(t1*t1+t2*t2);
+  }
     }
   else
     {

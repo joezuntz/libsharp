@@ -280,6 +280,58 @@ NOINLINE static void calc_alm2map (sharp_job * restrict job,
   alm2map_kernel(d, rf, alm, l, lmax, nv2);
   }
 
+NOINLINE static void calc_alm2map_alt (sharp_job * restrict job,
+  const sharp_Ylmgen_C * restrict gen, s0data_v * restrict d, int nth)
+  {
+  int l=gen->m, lmax=gen->lmax;
+  int nv2 = (nth+VLEN-1)/VLEN;
+  job->opcnt += (lmax+1-l) * 6*nth;
+
+const double inv_sqrt4pi = 0.2820947917738781434740397257803862929220;
+  Tv mfac = vload(gen->mfac[gen->m]);
+  for (int i=0; i<nv2; ++i)
+    {
+    d->lam1[i]=vzero;
+    mypow(d->sth[i],l,gen->powlimit,&d->lam2[i],&d->scale[i]);
+    d->lam2[i] *= mfac;
+    Tvnormalize(&d->lam2[i],&d->scale[i],sharp_ftol);
+    }
+
+  const dcmplx * restrict alm=job->almtmp;
+  dcmplx * restrict alm2=RALLOC(dcmplx, gen->lmax+5);
+  {
+  for (int il=0, l=gen->m; l<=gen->lmax; ++il,l+=2)
+    {
+    dcmplx al = alm[l];
+    dcmplx al1 = (l+1>gen->lmax) ? 0. : alm[l+1];
+    dcmplx al2 = (l+2>gen->lmax) ? 0. : alm[l+2];
+    alm2[l  ] = gen->alpha[il]*(gen->eps[l+1]*al + gen->eps[l+2]*al2);
+    alm2[l+1] = gen->alpha[il]*al1;
+    }
+  }
+  for (int i=0; i<nv2; ++i)
+    getCorfac(d->scale[i], &d->corfac[i], gen->cf);
+
+  for (int il=0, l=gen->m; l<=lmax; ++il, l+=2)
+    {
+    Tv ar1=vload(creal(alm2[l  ])), ai1=vload(cimag(alm2[l  ]));
+    Tv ar2=vload(creal(alm2[l+1])), ai2=vload(cimag(alm2[l+1]));
+    for (int i=0; i<nv2; ++i)
+      {
+      d->p1r[i] += d->lam2[i]*d->corfac[i]*ar1;
+      d->p1i[i] += d->lam2[i]*d->corfac[i]*ai1;
+      d->p2r[i] += d->cth[i]*d->lam2[i]*d->corfac[i]*ar2;
+      d->p2i[i] += d->cth[i]*d->lam2[i]*d->corfac[i]*ai2;
+      Tv tmp = (gen->a[il]*d->cth[i]*d->cth[i] + gen->b[il])*d->lam2[i] + d->lam1[i];
+      d->lam1[i] = d->lam2[i];
+      d->lam2[i] = tmp;
+      if (rescale(&d->lam1[i], &d->lam2[i], &d->scale[i], vload(sharp_ftol)))
+        getCorfac(d->scale[i], &d->corfac[i], gen->cf);
+      }
+    }
+  DEALLOC(alm2);
+  }
+
 NOINLINE static void map2alm_kernel(s0data_v * restrict d,
   const sharp_ylmgen_dbl2 * restrict rf, dcmplx * restrict alm, int l,
   int lmax, int nv2)
@@ -812,7 +864,7 @@ NOINLINE static void inner_loop_a2m(sharp_job *job, const int *ispair,
               d.s.sth[i]=d.s.sth[nth-1];
               d.s.p1r[i]=d.s.p1i[i]=d.s.p2r[i]=d.s.p2i[i]=0.;
               }
-            calc_alm2map (job, gen, &d.v, nth);
+            calc_alm2map_alt (job, gen, &d.v, nth);
             for (int i=0; i<nth; ++i)
               {
               int tgt=itgt[i];
