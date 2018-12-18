@@ -289,6 +289,7 @@ NOINLINE static void calc_alm2map_alt (sharp_job * restrict job,
 
 const double inv_sqrt4pi = 0.2820947917738781434740397257803862929220;
   Tv mfac = vload(gen->mfac[gen->m]);
+  if (gen->m&1) mfac=-mfac;
   for (int i=0; i<nv2; ++i)
     {
     d->lam1[i]=vzero;
