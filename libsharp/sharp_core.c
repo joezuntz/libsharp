@@ -355,7 +355,6 @@ NOINLINE static void map2alm_alt_kernel(s0data_v * restrict d,
       d->lam2[i] = tmp;
       }
     vhsum_cmplx_special (atmp[0], atmp[1], atmp[2], atmp[3], &alm[l]);
-    l+=2;
     }
   }
 
@@ -498,7 +497,6 @@ NOINLINE static void calc_map2alm_alt (sharp_job * restrict job,
   iter_to_ieee_alt(gen, d, &l, &il, nv2);
   job->opcnt += il * 4*nth;
   if (l>lmax) return;
-//  printf("beep\n");
   job->opcnt += (lmax+1-l) * 6*nth;
 
   const sharp_ylmgen_dbl2 * restrict ab = gen->ab;
@@ -532,10 +530,8 @@ NOINLINE static void calc_map2alm_alt (sharp_job * restrict job,
       }
     vhsum_cmplx_special (atmp[0], atmp[1], atmp[2], atmp[3], &alm[l]);
     l+=2; ++il;
-    full_ieee=0;
     }
   if (l>lmax) return;
-//  printf("boop\n");
 
   for (int i=0; i<nv2; ++i)
     {
@@ -1153,13 +1149,16 @@ d.s.p2i[nth]*=d.s.cth[nth];
           }
 //adjust the a_lm for the new algorithm
 dcmplx * restrict alm=job->almtmp;
+dcmplx alm2 = 0.;
+double alold=0;
 for (int il=0, l=gen->m; l<=gen->lmax; ++il,l+=2)
   {
   dcmplx al = alm[l];
   dcmplx al1 = (l+1>gen->lmax) ? 0. : alm[l+1];
-  dcmplx alm2 = (l<gen->m+2) ? 0. : alm[l-2];
-  alm[l  ] = gen->alpha[il]*(gen->eps[l+1]*al + gen->eps[l]*alm2);
+  alm[l  ] = gen->alpha[il]*gen->eps[l+1]*al + alold*gen->eps[l]*alm2;
   alm[l+1] = gen->alpha[il]*al1;
+  alm2=al;
+  alold=gen->alpha[il];
   }
         }
       else
