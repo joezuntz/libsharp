@@ -55,11 +55,8 @@ typedef struct
   int m;
 
 /* used if s==0 */
-  double *mfac;
-  sharp_ylmgen_dbl2 *rf;
-
-double *eps, *alpha;
-sharp_ylmgen_dbl2 *ab;
+  double *mfac, *eps, *alpha;
+  sharp_ylmgen_dbl2 *ab;
 
 /* used if s!=0 */
   int sinPow, cosPow, preMinus_p, preMinus_m;

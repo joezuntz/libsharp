@@ -800,16 +800,16 @@ NOINLINE static void inner_loop_a2m(sharp_job *job, const int *ispair,
       {
       if (job->spin==0)
         {
-//adjust the a_lm for the new algorithm
-dcmplx * restrict alm=job->almtmp;
-for (int il=0, l=gen->m; l<=gen->lmax; ++il,l+=2)
-  {
-  dcmplx al = alm[l];
-  dcmplx al1 = (l+1>gen->lmax) ? 0. : alm[l+1];
-  dcmplx al2 = (l+2>gen->lmax) ? 0. : alm[l+2];
-  alm[l  ] = gen->alpha[il]*(gen->eps[l+1]*al + gen->eps[l+2]*al2);
-  alm[l+1] = gen->alpha[il]*al1;
-  }
+        //adjust the a_lm for the new algorithm
+        dcmplx * restrict alm=job->almtmp;
+        for (int il=0, l=gen->m; l<=gen->lmax; ++il,l+=2)
+          {
+          dcmplx al = alm[l];
+          dcmplx al1 = (l+1>gen->lmax) ? 0. : alm[l+1];
+          dcmplx al2 = (l+2>gen->lmax) ? 0. : alm[l+2];
+          alm[l  ] = gen->alpha[il]*(gen->eps[l+1]*al + gen->eps[l+2]*al2);
+          alm[l+1] = gen->alpha[il]*al1;
+          }
 
         const int nval=nv0*VLEN;
         int ith=0;
@@ -848,9 +848,9 @@ for (int il=0, l=gen->m; l<=gen->lmax; ++il,l+=2)
             for (int i=0; i<nth; ++i)
               {
               int tgt=itgt[i];
-//adjust for new algorithm
-d.s.p2r[i]*=cth_[tgt];
-d.s.p2i[i]*=cth_[tgt];
+              //adjust for new algorithm
+              d.s.p2r[i]*=cth_[tgt];
+              d.s.p2i[i]*=cth_[tgt];
               int phas_idx = tgt*job->s_th + mi*job->s_m;
               complex double r1 = d.s.p1r[i] + d.s.p1i[i]*_Complex_I,
                              r2 = d.s.p2r[i] + d.s.p2i[i]*_Complex_I;
@@ -963,9 +963,9 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
               dcmplx ph2=ispair[ith] ? job->phase[phas_idx+1] : 0.;
               d.s.p1r[nth]=creal(ph1+ph2); d.s.p1i[nth]=cimag(ph1+ph2);
               d.s.p2r[nth]=creal(ph1-ph2); d.s.p2i[nth]=cimag(ph1-ph2);
-//adjust for new algorithm
-d.s.p2r[nth]*=cth_[ith];
-d.s.p2i[nth]*=cth_[ith];
+              //adjust for new algorithm
+              d.s.p2r[nth]*=cth_[ith];
+              d.s.p2i[nth]*=cth_[ith];
               ++nth;
               }
             ++ith;
@@ -982,19 +982,19 @@ d.s.p2i[nth]*=cth_[ith];
             calc_map2alm (job, gen, &d.v, nth);
             }
           }
-//adjust the a_lm for the new algorithm
-dcmplx * restrict alm=job->almtmp;
-dcmplx alm2 = 0.;
-double alold=0;
-for (int il=0, l=gen->m; l<=gen->lmax; ++il,l+=2)
-  {
-  dcmplx al = alm[l];
-  dcmplx al1 = (l+1>gen->lmax) ? 0. : alm[l+1];
-  alm[l  ] = gen->alpha[il]*gen->eps[l+1]*al + alold*gen->eps[l]*alm2;
-  alm[l+1] = gen->alpha[il]*al1;
-  alm2=al;
-  alold=gen->alpha[il];
-  }
+        //adjust the a_lm for the new algorithm
+        dcmplx * restrict alm=job->almtmp;
+        dcmplx alm2 = 0.;
+        double alold=0;
+        for (int il=0, l=gen->m; l<=gen->lmax; ++il,l+=2)
+          {
+          dcmplx al = alm[l];
+          dcmplx al1 = (l+1>gen->lmax) ? 0. : alm[l+1];
+          alm[l  ] = gen->alpha[il]*gen->eps[l+1]*al + alold*gen->eps[l]*alm2;
+          alm[l+1] = gen->alpha[il]*al1;
+          alm2=al;
+          alold=gen->alpha[il];
+          }
         }
       else
         {
