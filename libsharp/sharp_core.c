@@ -318,28 +318,6 @@ NOINLINE static void alm2map_alt_kernel(s0data_v * restrict d,
   const sharp_ylmgen_dbl2 * restrict ab, const dcmplx * restrict alm,
   int l, int il, int lmax, int nv2)
   {
-  for (; l<=lmax-2; il+=2, l+=4)
-    {
-    Tv ar1=vload(creal(alm[l  ])), ai1=vload(cimag(alm[l  ]));
-    Tv ar2=vload(creal(alm[l+1])), ai2=vload(cimag(alm[l+1]));
-    Tv ar3=vload(creal(alm[l+2])), ai3=vload(cimag(alm[l+2]));
-    Tv ar4=vload(creal(alm[l+3])), ai4=vload(cimag(alm[l+3]));
-    Tv a1=vload(ab[il  ].f[0]), b1=vload(ab[il  ].f[1]);
-    Tv a2=vload(ab[il+1].f[0]), b2=vload(ab[il+1].f[1]);
-    for (int i=0; i<nv2; ++i)
-      {
-      d->p1r[i] += d->lam2[i]*ar1;
-      d->p1i[i] += d->lam2[i]*ai1;
-      d->p2r[i] += d->lam2[i]*ar2;
-      d->p2i[i] += d->lam2[i]*ai2;
-      d->lam1[i] = (a1*d->csq[i] + b1)*d->lam2[i] + d->lam1[i];
-      d->p1r[i] += d->lam1[i]*ar3;
-      d->p1i[i] += d->lam1[i]*ai3;
-      d->p2r[i] += d->lam1[i]*ar4;
-      d->p2i[i] += d->lam1[i]*ai4;
-      d->lam2[i] = (a2*d->csq[i] + b2)*d->lam1[i] + d->lam2[i];
-     }
-    }
   for (; l<=lmax; ++il, l+=2)
     {
     Tv ar1=vload(creal(alm[l  ])), ai1=vload(cimag(alm[l  ]));
@@ -355,6 +333,29 @@ NOINLINE static void alm2map_alt_kernel(s0data_v * restrict d,
       d->lam1[i] = d->lam2[i];
       d->lam2[i] = tmp;
       }
+    }
+  }
+
+NOINLINE static void map2alm_alt_kernel(s0data_v * restrict d,
+  const sharp_ylmgen_dbl2 * restrict ab, dcmplx * restrict alm, int l,
+  int il, int lmax, int nv2)
+  {
+  for (; l<=lmax; ++il, l+=2)
+    {
+    Tv a=vload(ab[il].f[0]), b=vload(ab[il].f[1]);
+    Tv atmp[4] = {vzero, vzero, vzero, vzero};
+    for (int i=0; i<nv2; ++i)
+      {
+      atmp[0] += d->lam2[i]*d->p1r[i];
+      atmp[1] += d->lam2[i]*d->p1i[i];
+      atmp[2] += d->lam2[i]*d->p2r[i];
+      atmp[3] += d->lam2[i]*d->p2i[i];
+      Tv tmp = (a*d->csq[i] + b)*d->lam2[i] + d->lam1[i];
+      d->lam1[i] = d->lam2[i];
+      d->lam2[i] = tmp;
+      }
+    vhsum_cmplx_special (atmp[0], atmp[1], atmp[2], atmp[3], &alm[l]);
+    l+=2;
     }
   }
 
@@ -485,6 +486,63 @@ NOINLINE static void calc_map2alm(sharp_job * restrict job,
     d->lam2[i] *= d->corfac[i];
     }
   map2alm_kernel(d, rf, alm, l, lmax, nv2);
+  }
+
+NOINLINE static void calc_map2alm_alt (sharp_job * restrict job,
+  const sharp_Ylmgen_C * restrict gen, s0data_v * restrict d, int nth)
+  {
+  int l,il,lmax=gen->lmax;
+  int nv2 = (nth+VLEN-1)/VLEN;
+  for (int i=0; i<nv2; ++i)
+    d->csq[i] = d->cth[i]*d->cth[i];
+  iter_to_ieee_alt(gen, d, &l, &il, nv2);
+  job->opcnt += il * 4*nth;
+  if (l>lmax) return;
+//  printf("beep\n");
+  job->opcnt += (lmax+1-l) * 6*nth;
+
+  const sharp_ylmgen_dbl2 * restrict ab = gen->ab;
+  dcmplx * restrict alm=job->almtmp;
+  int full_ieee=1;
+  for (int i=0; i<nv2; ++i)
+    {
+    getCorfac(d->scale[i], &d->corfac[i], gen->cf);
+    full_ieee &= vallTrue(vge(d->scale[i],vload(sharp_minscale)));
+    }
+
+  while((!full_ieee) && (l<=lmax))
+    {
+    Tv a=vload(ab[il].f[0]), b=vload(ab[il].f[1]);
+    Tv atmp[4] = {vzero, vzero, vzero, vzero};
+    full_ieee=1;
+    for (int i=0; i<nv2; ++i)
+      {
+      atmp[0] += d->lam2[i]*d->corfac[i]*d->p1r[i];
+      atmp[1] += d->lam2[i]*d->corfac[i]*d->p1i[i];
+      atmp[2] += d->lam2[i]*d->corfac[i]*d->p2r[i];
+      atmp[3] += d->lam2[i]*d->corfac[i]*d->p2i[i];
+      Tv tmp = (a*d->csq[i] + b)*d->lam2[i] + d->lam1[i];
+      d->lam1[i] = d->lam2[i];
+      d->lam2[i] = tmp;
+      if (rescale(&d->lam1[i], &d->lam2[i], &d->scale[i], vload(sharp_ftol)))
+        {
+        getCorfac(d->scale[i], &d->corfac[i], gen->cf);
+        full_ieee &= vallTrue(vge(d->scale[i],vload(sharp_minscale)));
+        }
+      }
+    vhsum_cmplx_special (atmp[0], atmp[1], atmp[2], atmp[3], &alm[l]);
+    l+=2; ++il;
+    full_ieee=0;
+    }
+  if (l>lmax) return;
+//  printf("boop\n");
+
+  for (int i=0; i<nv2; ++i)
+    {
+    d->lam1[i] *= d->corfac[i];
+    d->lam2[i] *= d->corfac[i];
+    }
+  map2alm_alt_kernel(d, ab, alm, l, il, lmax, nv2);
   }
 
 NOINLINE static void iter_to_ieee_spin (const sharp_Ylmgen_C * restrict gen,
@@ -1074,6 +1132,9 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
               dcmplx ph2=ispair[ith] ? job->phase[phas_idx+1] : 0.;
               d.s.p1r[nth]=creal(ph1+ph2); d.s.p1i[nth]=cimag(ph1+ph2);
               d.s.p2r[nth]=creal(ph1-ph2); d.s.p2i[nth]=cimag(ph1-ph2);
+//adjust for new algorithm
+d.s.p2r[nth]*=d.s.cth[nth];
+d.s.p2i[nth]*=d.s.cth[nth];
               ++nth;
               }
             ++ith;
@@ -1087,9 +1148,19 @@ NOINLINE static void inner_loop_m2a(sharp_job *job, const int *ispair,
               d.s.sth[i]=d.s.sth[nth-1];
               d.s.p1r[i]=d.s.p1i[i]=d.s.p2r[i]=d.s.p2i[i]=0.;
               }
-            calc_map2alm (job, gen, &d.v, nth);
+            calc_map2alm_alt (job, gen, &d.v, nth);
             }
           }
+//adjust the a_lm for the new algorithm
+dcmplx * restrict alm=job->almtmp;
+for (int il=0, l=gen->m; l<=gen->lmax; ++il,l+=2)
+  {
+  dcmplx al = alm[l];
+  dcmplx al1 = (l+1>gen->lmax) ? 0. : alm[l+1];
+  dcmplx alm2 = (l<gen->m+2) ? 0. : alm[l-2];
+  alm[l  ] = gen->alpha[il]*(gen->eps[l+1]*al + gen->eps[l]*alm2);
+  alm[l+1] = gen->alpha[il]*al1;
+  }
         }
       else
         {
