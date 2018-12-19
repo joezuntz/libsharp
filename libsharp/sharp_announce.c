@@ -40,7 +40,7 @@
 #endif
 
 #include "sharp_announce.h"
-#include "sharp_core.h"
+#include "sharp_internal.h"
 
 static void OpenMP_status(void)
   {
