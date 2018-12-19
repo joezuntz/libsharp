@@ -74,9 +74,9 @@ void sharp_Ylmgen_init (sharp_Ylmgen_C *gen, int l_max, int m_max, int spin)
     gen->mfac[0] = inv_sqrt4pi;
     for (int m=1; m<=gen->mmax; ++m)
       gen->mfac[m] = gen->mfac[m-1]*sqrt((2*m+1.)/(2*m));
-    gen->root = RALLOC(double,2*gen->lmax+5);
-    gen->iroot = RALLOC(double,2*gen->lmax+5);
-    for (int m=0; m<2*gen->lmax+5; ++m)
+    gen->root = RALLOC(double,2*gen->lmax+7);
+    gen->iroot = RALLOC(double,2*gen->lmax+7);
+    for (int m=0; m<2*gen->lmax+7; ++m)
       {
       gen->root[m] = sqrt(m);
       gen->iroot[m] = (m==0) ? 0. : 1./gen->root[m];
