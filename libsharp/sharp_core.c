@@ -515,15 +515,11 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
       d->l2p[i] = (d->cth[i]-fx21)*fx20*d->l1p[i] - fx22*d->l2p[i];
       d->l2m[i] = (d->cth[i]+fx21)*fx20*d->l1m[i] - fx22*d->l2m[i];
       if (rescale(&d->l1p[i], &d->l2p[i], &d->scp[i], vload(sharp_ftol)))
-        {
         getCorfac(d->scp[i], &d->cfp[i], gen->cf);
-        full_ieee &= vallTrue(vge(d->scp[i],vload(sharp_minscale)));
-        }
+      full_ieee &= vallTrue(vge(d->scp[i],vload(sharp_minscale)));
       if (rescale(&d->l1m[i], &d->l2m[i], &d->scm[i], vload(sharp_ftol)))
-        {
         getCorfac(d->scm[i], &d->cfm[i], gen->cf);
-        full_ieee &= vallTrue(vge(d->scm[i],vload(sharp_minscale)));
-        }
+      full_ieee &= vallTrue(vge(d->scm[i],vload(sharp_minscale)));
       }
     l+=2;
     }
@@ -625,15 +621,11 @@ NOINLINE static void calc_map2alm_spin (sharp_job * restrict job,
       acr2 += d->p2mr[i]*lw + d->p1pi[i]*lx;
       aci2 += d->p2mi[i]*lw - d->p1pr[i]*lx;
       if (rescale(&d->l1p[i], &d->l2p[i], &d->scp[i], vload(sharp_ftol)))
-        {
         getCorfac(d->scp[i], &d->cfp[i], gen->cf);
-        full_ieee &= vallTrue(vge(d->scp[i],vload(sharp_minscale)));
-        }
+      full_ieee &= vallTrue(vge(d->scp[i],vload(sharp_minscale)));
       if (rescale(&d->l1m[i], &d->l2m[i], &d->scm[i], vload(sharp_ftol)))
-        {
         getCorfac(d->scm[i], &d->cfm[i], gen->cf);
-        full_ieee &= vallTrue(vge(d->scm[i],vload(sharp_minscale)));
-        }
+      full_ieee &= vallTrue(vge(d->scm[i],vload(sharp_minscale)));
       }
     vhsum_cmplx_special (agr1,agi1,acr1,aci1,&alm[2*l]);
     vhsum_cmplx_special (agr2,agi2,acr2,aci2,&alm[2*l+2]);
