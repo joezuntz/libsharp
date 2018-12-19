@@ -223,18 +223,18 @@ NOINLINE static void iter_to_ieee_alt(const sharp_Ylmgen_C * restrict gen,
 
   while (below_limit)
     {
-    if (l+2>gen->lmax) {*l_=gen->lmax+1;return;}
+    if (l+4>gen->lmax) {*l_=gen->lmax+1;return;}
     below_limit=1;
-    Tv a=vload(gen->ab[il].f[0]), b=vload(gen->ab[il].f[1]);
+    Tv a1=vload(gen->ab[il  ].f[0]), b1=vload(gen->ab[il  ].f[1]);
+    Tv a2=vload(gen->ab[il+1].f[0]), b2=vload(gen->ab[il+1].f[1]);
     for (int i=0; i<nv2; ++i)
       {
-      Tv tmp = (a*d->csq[i] + b)*d->lam2[i] + d->lam1[i];
-      d->lam1[i] = d->lam2[i];
-      d->lam2[i] = tmp;
+      d->lam1[i] = (a1*d->csq[i] + b1)*d->lam2[i] + d->lam1[i];
+      d->lam2[i] = (a2*d->csq[i] + b2)*d->lam1[i] + d->lam2[i];
       if (rescale(&d->lam1[i], &d->lam2[i], &d->scale[i], vload(sharp_ftol)))
         below_limit &= vallTrue(vlt(d->scale[i],vload(sharp_limscale)));
       }
-    l+=2; ++il;
+    l+=4; il+=2;
     }
   *l_=l; *il_=il;
   }
@@ -340,6 +340,28 @@ NOINLINE static void map2alm_alt_kernel(s0data_v * restrict d,
   const sharp_ylmgen_dbl2 * restrict ab, dcmplx * restrict alm, int l,
   int il, int lmax, int nv2)
   {
+  for (; l<=lmax-2; il+=2, l+=4)
+    {
+    Tv a1=vload(ab[il  ].f[0]), b1=vload(ab[il  ].f[1]);
+    Tv a2=vload(ab[il+1].f[0]), b2=vload(ab[il+1].f[1]);
+    Tv atmp1[4] = {vzero, vzero, vzero, vzero};
+    Tv atmp2[4] = {vzero, vzero, vzero, vzero};
+    for (int i=0; i<nv2; ++i)
+      {
+      atmp1[0] += d->lam2[i]*d->p1r[i];
+      atmp1[1] += d->lam2[i]*d->p1i[i];
+      atmp1[2] += d->lam2[i]*d->p2r[i];
+      atmp1[3] += d->lam2[i]*d->p2i[i];
+      d->lam1[i] = (a1*d->csq[i] + b1)*d->lam2[i] + d->lam1[i];
+      atmp2[0] += d->lam1[i]*d->p1r[i];
+      atmp2[1] += d->lam1[i]*d->p1i[i];
+      atmp2[2] += d->lam1[i]*d->p2r[i];
+      atmp2[3] += d->lam1[i]*d->p2i[i];
+      d->lam2[i] = (a2*d->csq[i] + b2)*d->lam1[i] + d->lam2[i];
+      }
+    vhsum_cmplx_special (atmp1[0], atmp1[1], atmp1[2], atmp1[3], &alm[l  ]);
+    vhsum_cmplx_special (atmp2[0], atmp2[1], atmp2[2], atmp2[3], &alm[l+2]);
+    }
   for (; l<=lmax; ++il, l+=2)
     {
     Tv a=vload(ab[il].f[0]), b=vload(ab[il].f[1]);
