@@ -261,10 +261,8 @@ NOINLINE static void calc_alm2map (sharp_job * restrict job,
       d->p1i[i] += d->lam2[i]*d->corfac[i]*ai1;
       d->lam2[i] = f20*d->cth[i]*d->lam1[i] - f21*d->lam2[i];
       if (rescale(&d->lam1[i], &d->lam2[i], &d->scale[i], vload(sharp_ftol)))
-        {
         getCorfac(d->scale[i], &d->corfac[i], gen->cf);
-        full_ieee &= vallTrue(vge(d->scale[i],vload(sharp_minscale)));
-        }
+      full_ieee &= vallTrue(vge(d->scale[i],vload(sharp_minscale)));
       d->p2r[i] += d->lam1[i]*d->corfac[i]*ar2;
       d->p2i[i] += d->lam1[i]*d->corfac[i]*ai2;
       }
@@ -336,16 +334,15 @@ NOINLINE static void calc_map2alm(sharp_job * restrict job,
       atmp[1] += d->lam2[i]*d->corfac[i]*d->p1i[i];
       d->lam2[i] = f20*d->cth[i]*d->lam1[i] - f21*d->lam2[i];
       if (rescale(&d->lam1[i], &d->lam2[i], &d->scale[i], vload(sharp_ftol)))
-        {
         getCorfac(d->scale[i], &d->corfac[i], gen->cf);
-        full_ieee &= vallTrue(vge(d->scale[i],vload(sharp_minscale)));
-        }
+      full_ieee &= vallTrue(vge(d->scale[i],vload(sharp_minscale)));
       atmp[2] += d->lam1[i]*d->corfac[i]*d->p2r[i];
       atmp[3] += d->lam1[i]*d->corfac[i]*d->p2i[i];
       }
     vhsum_cmplx_special (atmp[0], atmp[1], atmp[2], atmp[3], &alm[l]);
     l+=2;
     }
+  if (l>lmax) return;
 
   for (int i=0; i<nv2; ++i)
     {
