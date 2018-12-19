@@ -184,7 +184,7 @@ NOINLINE static void iter_to_ieee(const sharp_Ylmgen_C * restrict gen,
     mypow(d->sth[i],gen->m,gen->powlimit,&d->lam2[i],&d->scale[i]);
     d->lam2[i] *= mfac;
     Tvnormalize(&d->lam2[i],&d->scale[i],sharp_ftol);
-    below_limit &= vallTrue(vlt(d->scale[i],vload(sharp_limscale)));
+    below_limit &= vallTrue(vlt(d->scale[i],limscale));
     }
 
   while (below_limit)
@@ -209,6 +209,28 @@ NOINLINE static void alm2map_kernel(s0data_v * restrict d,
   const sharp_ylmgen_dbl2 * restrict ab, const dcmplx * restrict alm,
   int l, int il, int lmax, int nv2)
   {
+  for (; l<=lmax-2; il+=2, l+=4)
+    {
+    Tv ar1=vload(creal(alm[l  ])), ai1=vload(cimag(alm[l  ]));
+    Tv ar2=vload(creal(alm[l+1])), ai2=vload(cimag(alm[l+1]));
+    Tv ar3=vload(creal(alm[l+2])), ai3=vload(cimag(alm[l+2]));
+    Tv ar4=vload(creal(alm[l+3])), ai4=vload(cimag(alm[l+3]));
+    Tv a1=vload(ab[il  ].f[0]), b1=vload(ab[il  ].f[1]);
+    Tv a2=vload(ab[il+1].f[0]), b2=vload(ab[il+1].f[1]);
+    for (int i=0; i<nv2; ++i)
+      {
+      d->p1r[i] += d->lam2[i]*ar1;
+      d->p1i[i] += d->lam2[i]*ai1;
+      d->p2r[i] += d->lam2[i]*ar2;
+      d->p2i[i] += d->lam2[i]*ai2;
+      d->lam1[i] = (a1*d->csq[i] + b1)*d->lam2[i] + d->lam1[i];
+      d->p1r[i] += d->lam1[i]*ar3;
+      d->p1i[i] += d->lam1[i]*ai3;
+      d->p2r[i] += d->lam1[i]*ar4;
+      d->p2i[i] += d->lam1[i]*ai4;
+      d->lam2[i] = (a2*d->csq[i] + b2)*d->lam1[i] + d->lam2[i];
+      }
+    }
   for (; l<=lmax; ++il, l+=2)
     {
     Tv ar1=vload(creal(alm[l  ])), ai1=vload(cimag(alm[l  ]));
