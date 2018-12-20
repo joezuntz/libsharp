@@ -241,13 +241,14 @@ static int good_fft_size(int n)
   }
 
 static void get_infos (const char *gname, int lmax, int *mmax, int *gpar1,
-  int *gpar2, sharp_geom_info **ginfo, sharp_alm_info **ainfo)
+  int *gpar2, sharp_geom_info **ginfo, sharp_alm_info **ainfo, int verbose)
   {
   UTIL_ASSERT(lmax>=0,"lmax must not be negative");
   if (*mmax<0) *mmax=lmax;
   UTIL_ASSERT(*mmax<=lmax,"mmax larger than lmax");
 
-  if (mytask==0) printf ("lmax: %d, mmax: %d\n",lmax,*mmax);
+  verbose &= (mytask==0);
+  if (verbose) printf ("lmax: %d, mmax: %d\n",lmax,*mmax);
 
   sharp_make_triangular_alm_info(lmax,*mmax,1,ainfo);
 #ifdef USE_MPI
@@ -259,14 +260,14 @@ static void get_infos (const char *gname, int lmax, int *mmax, int *gpar1,
     if (*gpar1<1) *gpar1=lmax/2;
     if (*gpar1==0) ++(*gpar1);
     sharp_make_healpix_geom_info (*gpar1, 1, ginfo);
-    if (mytask==0) printf ("HEALPix grid, nside=%d\n",*gpar1);
+    if (verbose) printf ("HEALPix grid, nside=%d\n",*gpar1);
     }
   else if (strcmp(gname,"gauss")==0)
     {
     if (*gpar1<1) *gpar1=lmax+1;
     if (*gpar2<1) *gpar2=2*(*mmax)+1;
     sharp_make_gauss_geom_info (*gpar1, *gpar2, 0., 1, *gpar2, ginfo);
-    if (mytask==0)
+    if (verbose)
       printf ("Gauss-Legendre grid, nlat=%d, nlon=%d\n",*gpar1,*gpar2);
     }
   else if (strcmp(gname,"fejer1")==0)
@@ -274,21 +275,21 @@ static void get_infos (const char *gname, int lmax, int *mmax, int *gpar1,
     if (*gpar1<1) *gpar1=2*lmax+1;
     if (*gpar2<1) *gpar2=2*(*mmax)+1;
     sharp_make_fejer1_geom_info (*gpar1, *gpar2, 0., 1, *gpar2, ginfo);
-    if (mytask==0) printf ("Fejer1 grid, nlat=%d, nlon=%d\n",*gpar1,*gpar2);
+    if (verbose) printf ("Fejer1 grid, nlat=%d, nlon=%d\n",*gpar1,*gpar2);
     }
   else if (strcmp(gname,"fejer2")==0)
     {
     if (*gpar1<1) *gpar1=2*lmax+1;
     if (*gpar2<1) *gpar2=2*(*mmax)+1;
     sharp_make_fejer2_geom_info (*gpar1, *gpar2, 0., 1, *gpar2, ginfo);
-    if (mytask==0) printf ("Fejer2 grid, nlat=%d, nlon=%d\n",*gpar1,*gpar2);
+    if (verbose) printf ("Fejer2 grid, nlat=%d, nlon=%d\n",*gpar1,*gpar2);
     }
   else if (strcmp(gname,"cc")==0)
     {
     if (*gpar1<1) *gpar1=2*lmax+1;
     if (*gpar2<1) *gpar2=2*(*mmax)+1;
     sharp_make_cc_geom_info (*gpar1, *gpar2, 0., 1, *gpar2, ginfo);
-    if (mytask==0)
+    if (verbose)
       printf("Clenshaw-Curtis grid, nlat=%d, nlon=%d\n",*gpar1,*gpar2);
     }
   else if (strcmp(gname,"smallgauss")==0)
@@ -318,7 +319,7 @@ static void get_infos (const char *gname, int lmax, int *mmax, int *gpar1,
         ofs+=pring;
         }
       }
-    if (mytask==0)
+    if (verbose)
       {
       ptrdiff_t npix=get_npix(*ginfo);
       printf("Small Gauss grid, nlat=%d, npix=%ld, savings=%.2f%%\n",
@@ -485,6 +486,16 @@ static void check_accuracy (sharp_geom_info *ginfo, sharp_alm_info *ainfo,
   DEALLOC(err_abs);
   }
 
+static void run(int lmax, int mmax, int nlat, int nlon, int spin)
+  {
+  sharp_geom_info *ginfo;
+  sharp_alm_info *ainfo;
+  get_infos ("gauss", lmax, &mmax, &nlat, &nlon, &ginfo, &ainfo, 0);
+  check_accuracy(ginfo,ainfo,spin);
+  sharp_destroy_alm_info(ainfo);
+  sharp_destroy_geom_info(ginfo);
+  }
+
 static void sharp_acctest(void)
   {
   if (mytask==0) sharp_module_startup("sharp_acctest",1,1,"",1);
@@ -495,17 +506,15 @@ static void sharp_acctest(void)
 
   if (mytask==0) printf("Testing map analysis accuracy.\n");
 
-  sharp_geom_info *ginfo;
-  sharp_alm_info *ainfo;
-  int lmax=127, mmax=127, nlat=128, nlon=256;
-  get_infos ("gauss", lmax, &mmax, &nlat, &nlon, &ginfo, &ainfo);
-  check_accuracy(ginfo,ainfo,0);
-  check_accuracy(ginfo,ainfo,1);
-  check_accuracy(ginfo,ainfo,2);
-  check_accuracy(ginfo,ainfo,3);
-  check_accuracy(ginfo,ainfo,30);
-  sharp_destroy_alm_info(ainfo);
-  sharp_destroy_geom_info(ginfo);
+  run(127, 127, 128, 256, 0);
+  run(127, 127, 128, 256, 1);
+  run(127, 127, 128, 256, 2);
+  run(127, 127, 128, 256, 3);
+  run(127, 127, 128, 256, 30);
+  run(5, 0, 6, 1, 0);
+  run(5, 0, 7, 2, 0);
+  run(8, 8, 9, 17, 0);
+  run(8, 8, 9, 17, 2);
   if (mytask==0) printf("Passed.\n\n");
   }
 
@@ -524,7 +533,7 @@ static void sharp_test (int argc, const char **argv)
 
   sharp_geom_info *ginfo;
   sharp_alm_info *ainfo;
-  get_infos (argv[2], lmax, &mmax, &gpar1, &gpar2, &ginfo, &ainfo);
+  get_infos (argv[2], lmax, &mmax, &gpar1, &gpar2, &ginfo, &ainfo, 1);
 
   int ncomp = (spin==0) ? 1 : 2;
   double t_a2m=1e30, t_m2a=1e30;

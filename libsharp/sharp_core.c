@@ -219,15 +219,11 @@ NOINLINE static void alm2map_kernel(s0data_v * restrict d,
     Tv a2=vload(ab[il+1].f[0]), b2=vload(ab[il+1].f[1]);
     for (int i=0; i<nv2; ++i)
       {
-      d->p1r[i] += d->lam2[i]*ar1;
-      d->p1i[i] += d->lam2[i]*ai1;
-      d->p2r[i] += d->lam2[i]*ar2;
-      d->p2i[i] += d->lam2[i]*ai2;
       d->lam1[i] = (a1*d->csq[i] + b1)*d->lam2[i] + d->lam1[i];
-      d->p1r[i] += d->lam1[i]*ar3;
-      d->p1i[i] += d->lam1[i]*ai3;
-      d->p2r[i] += d->lam1[i]*ar4;
-      d->p2i[i] += d->lam1[i]*ai4;
+      d->p1r[i] += d->lam2[i]*ar1 + d->lam1[i]*ar3;
+      d->p1i[i] += d->lam2[i]*ai1 + d->lam1[i]*ai3;
+      d->p2r[i] += d->lam2[i]*ar2 + d->lam1[i]*ar4;
+      d->p2i[i] += d->lam2[i]*ai2 + d->lam1[i]*ai4;
       d->lam2[i] = (a2*d->csq[i] + b2)*d->lam1[i] + d->lam2[i];
       }
     }
