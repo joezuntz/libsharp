@@ -34,7 +34,7 @@
 
 #ifndef VLEN
 
-#if (defined (__MIC__) || defined(__AVX512F__))
+#if (defined(__AVX512F__))
 #define VLEN 8
 #elif (defined (__AVX__))
 #define VLEN 4
