@@ -34,7 +34,7 @@
 
 #ifndef VLEN
 
-#if (defined (__MIC__))
+#if (defined (__MIC__) || defined(__AVX512F__))
 #define VLEN 8
 #elif (defined (__AVX__))
 #define VLEN 4
@@ -44,14 +44,6 @@
 #define VLEN 1
 #endif
 
-#endif
-
-#ifndef USE_FMA4
-#ifdef __FMA4__
-#define USE_FMA4 1
-#else
-#define USE_FMA4 0
-#endif
 #endif
 
 #endif

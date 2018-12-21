@@ -112,9 +112,6 @@ static inline Tv vblend__(Tv m, Tv a, Tv b)
 #if (VLEN==4)
 
 #include <immintrin.h>
-#if (USE_FMA4)
-#include <x86intrin.h>
-#endif
 
 typedef __m256d Tv;
 typedef __m256d Tm;
