@@ -148,6 +148,7 @@ typedef __m512d Tv;
 typedef __mmask8 Tm;
 
 #define vaddeq_mask(mask,a,b) a=_mm512_mask_add_pd(a,mask,a,b);
+#define vsubeq_mask(mask,a,b) a=_mm512_mask_sub_pd(a,mask,a,b);
 #define vmuleq_mask(mask,a,b) a=_mm512_mask_mul_pd(a,mask,a,b);
 #define vneg(a) _mm512_mul_pd(a,_mm512_set1_pd(-1.))
 #define vload(a) _mm512_set1_pd(a)
