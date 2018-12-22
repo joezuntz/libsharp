@@ -108,15 +108,16 @@ NOINLINE static void ringhelper_update (ringhelper *self, int nph, int mmax, dou
       RESIZE (self->shiftarr,dcmplx,mmax+1);
       self->s_shift = mmax+1;
       self->phi0_ = phi0;
+// FIXME: improve this by using sincos2pibyn(nph) etc.
       for (int m=0; m<=mmax; ++m)
         self->shiftarr[m] = cos(m*phi0) + _Complex_I*sin(m*phi0);
 //      double *tmp=(double *) self->shiftarr;
 //      sincos_multi (mmax+1, phi0, &tmp[1], &tmp[0], 2);
       }
-  if (!self->plan) self->plan=make_rfft_plan(nph);
+//  if (!self->plan) self->plan=make_rfft_plan(nph);
   if (nph!=(int)self->length)
     {
-    destroy_rfft_plan(self->plan);
+    if (self->plan) destroy_rfft_plan(self->plan);
     self->plan=make_rfft_plan(nph);
     self->length=nph;
     }
