@@ -88,6 +88,8 @@ void sharp_Ylmgen_init (sharp_Ylmgen_C *gen, int l_max, int m_max, int spin)
     {
     gen->m=gen->mlo=gen->mhi=-1234567890;
     ALLOC(gen->fx,sharp_ylmgen_dbl3,gen->lmax+3);
+ALLOC(gen->alpha,double,gen->lmax+3);
+ALLOC(gen->fxx,sharp_ylmgen_dbl2,gen->lmax+3);
     for (int m=0; m<gen->lmax+3; ++m)
       gen->fx[m].f[0]=gen->fx[m].f[1]=gen->fx[m].f[2]=0.;
     ALLOC(gen->inv,double,gen->lmax+2);
@@ -145,6 +147,8 @@ void sharp_Ylmgen_destroy (sharp_Ylmgen_C *gen)
   else
     {
     DEALLOC(gen->fx);
+DEALLOC(gen->alpha);
+DEALLOC(gen->fxx);
     DEALLOC(gen->prefac);
     DEALLOC(gen->fscale);
     DEALLOC(gen->flm1);
@@ -199,6 +203,21 @@ void sharp_Ylmgen_prepare (sharp_Ylmgen_C *gen, int m)
            *gen->flm2[l+gen->s]*gen->flm2[l-gen->s];
         gen->fx[l+1].f[2]=t*l1*gen->inv[l];
         }
+// calculate alpha <=> index 3
+gen->alpha[gen->mhi]=gen->alpha[gen->mhi+1]=1.;
+for (int l=gen->mhi+2; l<gen->lmax; ++l)
+{
+  gen->alpha[l] = gen->alpha[l-2]*gen->fx[l+1].f[2];
+//  printf("%d %e %e\n", l, gen->fx[l].f[2], gen->alpha[l]);
+}
+gen->fxx[gen->mhi].f[0] = 0;
+gen->fxx[gen->mhi].f[0] = 0;
+for (int l=gen->mhi+1; l<gen->lmax+1; ++l)
+{
+  gen->fxx[l].f[0] = gen->fx[l].f[0]*gen->alpha[l-1]/gen->alpha[l];
+  gen->fxx[l].f[1] = gen->fx[l].f[1]*gen->fxx[l].f[0];
+}
+
       }
 
     gen->preMinus_p = gen->preMinus_m = 0;
