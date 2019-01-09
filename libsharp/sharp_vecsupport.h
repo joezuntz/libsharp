@@ -25,7 +25,7 @@
 /*  \file sharp_vecsupport.h
  *  Convenience functions for vector arithmetics
  *
- *  Copyright (C) 2012-2016 Max-Planck-Society
+ *  Copyright (C) 2012-2019 Max-Planck-Society
  *  Author: Martin Reinecke
  */
 
@@ -42,11 +42,14 @@ typedef double Ts;
 typedef double Tv;
 typedef int Tm;
 
+#define vload(a) (a)
+#define vzero 0.
+#define vone 1.
+
 #define vaddeq_mask(mask,a,b) if (mask) (a)+=(b);
 #define vsubeq_mask(mask,a,b) if (mask) (a)-=(b);
 #define vmuleq_mask(mask,a,b) if (mask) (a)*=(b);
 #define vneg(a) (-(a))
-#define vload(a) (a)
 #define vabs(a) fabs(a)
 #define vsqrt(a) sqrt(a)
 #define vlt(a,b) ((a)<(b))
@@ -55,14 +58,10 @@ typedef int Tm;
 #define vne(a,b) ((a)!=(b))
 #define vand_mask(a,b) ((a)&&(b))
 #define vor_mask(a,b) ((a)||(b))
-
 static inline Tv vmin (Tv a, Tv b) { return (a<b) ? a : b; }
 static inline Tv vmax (Tv a, Tv b) { return (a>b) ? a : b; }
-
 #define vanyTrue(a) (a)
 #define vallTrue(a) (a)
-#define vzero 0.
-#define vone 1.
 
 #endif
 
@@ -86,15 +85,15 @@ typedef __m128d Tm;
 static inline Tv vblend__(Tv m, Tv a, Tv b)
   { return _mm_or_pd(_mm_and_pd(a,m),_mm_andnot_pd(m,b)); }
 #endif
-#define vzero _mm_setzero_pd()
-#define vone _mm_set1_pd(1.)
-
-#define vaddeq_mask(mask,a,b) a=_mm_add_pd(a,vblend__(mask,b,vzero))
-#define vsubeq_mask(mask,a,b) a=_mm_sub_pd(a,vblend__(mask,b,vzero))
-#define vmuleq_mask(mask,a,b) a=_mm_mul_pd(a,vblend__(mask,b,vone))
-#define vneg(a) _mm_xor_pd(_mm_set1_pd(-0.),a)
 #define vload(a) _mm_set1_pd(a)
-#define vabs(a) _mm_andnot_pd(_mm_set1_pd(-0.),a)
+#define vzero _mm_setzero_pd()
+#define vone vload(1.)
+
+#define vaddeq_mask(mask,a,b) a+=vblend__(mask,b,vzero)
+#define vsubeq_mask(mask,a,b) a-=vblend__(mask,b,vzero)
+#define vmuleq_mask(mask,a,b) a*=vblend__(mask,b,vone)
+#define vneg(a) _mm_xor_pd(vload(-0.),a)
+#define vabs(a) _mm_andnot_pd(vload(-0.),a)
 #define vsqrt(a) _mm_sqrt_pd(a)
 #define vlt(a,b) _mm_cmplt_pd(a,b)
 #define vgt(a,b) _mm_cmpgt_pd(a,b)
@@ -117,15 +116,15 @@ typedef __m256d Tv;
 typedef __m256d Tm;
 
 #define vblend__(m,a,b) _mm256_blendv_pd(b,a,m)
-#define vzero _mm256_setzero_pd()
-#define vone _mm256_set1_pd(1.)
-
-#define vaddeq_mask(mask,a,b) a=_mm256_add_pd(a,vblend__(mask,b,vzero))
-#define vsubeq_mask(mask,a,b) a=_mm256_sub_pd(a,vblend__(mask,b,vzero))
-#define vmuleq_mask(mask,a,b) a=_mm256_mul_pd(a,vblend__(mask,b,vone))
-#define vneg(a) _mm256_xor_pd(_mm256_set1_pd(-0.),a)
 #define vload(a) _mm256_set1_pd(a)
-#define vabs(a) _mm256_andnot_pd(_mm256_set1_pd(-0.),a)
+#define vzero _mm256_setzero_pd()
+#define vone vload(1.)
+
+#define vaddeq_mask(mask,a,b) a+=vblend__(mask,b,vzero)
+#define vsubeq_mask(mask,a,b) a-=vblend__(mask,b,vzero)
+#define vmuleq_mask(mask,a,b) a*=vblend__(mask,b,vone)
+#define vneg(a) _mm256_xor_pd(vload(-0.),a)
+#define vabs(a) _mm256_andnot_pd(vload(-0.),a)
 #define vsqrt(a) _mm256_sqrt_pd(a)
 #define vlt(a,b) _mm256_cmp_pd(a,b,_CMP_LT_OQ)
 #define vgt(a,b) _mm256_cmp_pd(a,b,_CMP_GT_OQ)
@@ -147,12 +146,15 @@ typedef __m256d Tm;
 typedef __m512d Tv;
 typedef __mmask8 Tm;
 
+#define vload(a) _mm512_set1_pd(a)
+#define vzero _mm512_setzero_pd()
+#define vone vload(1.)
+
 #define vaddeq_mask(mask,a,b) a=_mm512_mask_add_pd(a,mask,a,b);
 #define vsubeq_mask(mask,a,b) a=_mm512_mask_sub_pd(a,mask,a,b);
 #define vmuleq_mask(mask,a,b) a=_mm512_mask_mul_pd(a,mask,a,b);
-#define vneg(a) _mm512_mul_pd(a,_mm512_set1_pd(-1.))
-#define vload(a) _mm512_set1_pd(a)
-#define vabs(a) (__m512d)_mm512_andnot_epi64((__m512i)_mm512_set1_pd(-0.),(__m512i)a)
+#define vneg(a) _mm512_mul_pd(a,vload(-1.))
+#define vabs(a) (__m512d)_mm512_andnot_epi64((__m512i)vload(-0.),(__m512i)a)
 #define vsqrt(a) _mm512_sqrt_pd(a)
 #define vlt(a,b) _mm512_cmp_pd_mask(a,b,_CMP_LT_OQ)
 #define vgt(a,b) _mm512_cmp_pd_mask(a,b,_CMP_GT_OQ)
@@ -164,9 +166,6 @@ typedef __mmask8 Tm;
 #define vmax(a,b) _mm512_max_pd(a,b)
 #define vanyTrue(a) (a!=0)
 #define vallTrue(a) (a==255)
-
-#define vzero _mm512_setzero_pd()
-#define vone _mm512_set1_pd(1.)
 
 #endif
 

@@ -25,7 +25,7 @@
 /*! \file sharp_ylmgen_c.h
  *  Code for efficient calculation of Y_lm(phi=0,theta)
  *
- *  Copyright (C) 2005-2016 Max-Planck-Society
+ *  Copyright (C) 2005-2019 Max-Planck-Society
  *  \author Martin Reinecke
  */
 
