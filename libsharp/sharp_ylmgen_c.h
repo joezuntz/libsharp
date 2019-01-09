@@ -54,17 +54,17 @@ typedef struct
 /* for public use; will typically change after call to Ylmgen_prepare() */
   int m;
 
+  double *alpha;
+
 /* used if s==0 */
-  double *mfac, *eps, *alpha;
+  double *mfac, *eps;
   sharp_ylmgen_dbl2 *ab;
 
 /* used if s!=0 */
   int sinPow, cosPow, preMinus_p, preMinus_m;
   double *prefac;
   int *fscale;
-  sharp_ylmgen_dbl3 *fx;
-//double *alpha;
-sharp_ylmgen_dbl2 *fxx;
+  sharp_ylmgen_dbl2 *fx;
 
 /* internal usage only */
 /* used if s==0 */

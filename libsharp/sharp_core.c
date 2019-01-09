@@ -392,8 +392,7 @@ NOINLINE static void calc_map2alm (sharp_job * restrict job,
 NOINLINE static void iter_to_ieee_spin (const sharp_Ylmgen_C * restrict gen,
   sxdata_v * restrict d, int * restrict l_, int nv2)
   {
-  const sharp_ylmgen_dbl2 * restrict fx = gen->fxx;
-  const sharp_ylmgen_dbl3 * restrict fxo = gen->fx;
+  const sharp_ylmgen_dbl2 * restrict fx = gen->fx;
   Tv prefac=vload(gen->prefac[gen->m]),
      prescale=vload(gen->fscale[gen->m]);
   Tv limscale=vload(sharp_limscale);
@@ -508,7 +507,7 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
   if (l>lmax) return;
   job->opcnt += (lmax+1-l) * 25*nth;
 
-  const sharp_ylmgen_dbl2 * restrict fx = gen->fxx;
+  const sharp_ylmgen_dbl2 * restrict fx = gen->fx;
   const dcmplx * restrict alm=job->almtmp;
   int full_ieee=1;
   for (int i=0; i<nv2; ++i)
@@ -612,7 +611,7 @@ NOINLINE static void calc_map2alm_spin (sharp_job * restrict job,
   if (l>lmax) return;
   job->opcnt += (lmax+1-l) * 25*nth;
 
-  const sharp_ylmgen_dbl2 * restrict fx = gen->fxx;
+  const sharp_ylmgen_dbl2 * restrict fx = gen->fx;
   dcmplx * restrict alm=job->almtmp;
   int full_ieee=1;
   for (int i=0; i<nv2; ++i)
@@ -715,7 +714,7 @@ NOINLINE static void calc_alm2map_deriv1(sharp_job * restrict job,
   if (l>lmax) return;
   job->opcnt += (lmax+1-l) * 17*nth;
 
-  const sharp_ylmgen_dbl2 * restrict fx = gen->fxx;
+  const sharp_ylmgen_dbl2 * restrict fx = gen->fx;
   const dcmplx * restrict alm=job->almtmp;
   int full_ieee=1;
   for (int i=0; i<nv2; ++i)

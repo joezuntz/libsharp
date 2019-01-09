@@ -87,11 +87,10 @@ void sharp_Ylmgen_init (sharp_Ylmgen_C *gen, int l_max, int m_max, int spin)
   else
     {
     gen->m=gen->mlo=gen->mhi=-1234567890;
-    ALLOC(gen->fx,sharp_ylmgen_dbl3,gen->lmax+3);
-ALLOC(gen->alpha,double,gen->lmax+3);
-ALLOC(gen->fxx,sharp_ylmgen_dbl2,gen->lmax+3);
+    ALLOC(gen->fx,sharp_ylmgen_dbl2,gen->lmax+3);
     for (int m=0; m<gen->lmax+3; ++m)
-      gen->fx[m].f[0]=gen->fx[m].f[1]=gen->fx[m].f[2]=0.;
+      gen->fx[m].f[0]=gen->fx[m].f[1]=0.;
+    ALLOC(gen->alpha,double,gen->lmax+3);
     ALLOC(gen->inv,double,gen->lmax+2);
     gen->inv[0]=0;
     for (int m=1; m<gen->lmax+2; ++m) gen->inv[m]=1./m;
@@ -147,8 +146,7 @@ void sharp_Ylmgen_destroy (sharp_Ylmgen_C *gen)
   else
     {
     DEALLOC(gen->fx);
-DEALLOC(gen->alpha);
-DEALLOC(gen->fxx);
+    DEALLOC(gen->alpha);
     DEALLOC(gen->prefac);
     DEALLOC(gen->fscale);
     DEALLOC(gen->flm1);
@@ -191,33 +189,26 @@ void sharp_Ylmgen_prepare (sharp_Ylmgen_C *gen, int m)
 
     if (!ms_similar)
       {
+      gen->alpha[gen->mhi] = 1.;
+      gen->fx[gen->mhi].f[0] = gen->fx[gen->mhi].f[1] = 0.;
       for (int l=gen->mhi; l<gen->lmax+1; ++l)
         {
         double t = gen->flm1[l+gen->m]*gen->flm1[l-gen->m]
                   *gen->flm1[l+gen->s]*gen->flm1[l-gen->s];
         double lt = 2*l+1;
         double l1 = l+1;
-        gen->fx[l+1].f[0]=l1*lt*t;
-        gen->fx[l+1].f[1]=gen->m*gen->s*gen->inv[l]*gen->inv[l+1];
+        double flp10=l1*lt*t;
+        double flp11=gen->m*gen->s*gen->inv[l]*gen->inv[l+1];
         t = gen->flm2[l+gen->m]*gen->flm2[l-gen->m]
            *gen->flm2[l+gen->s]*gen->flm2[l-gen->s];
-        gen->fx[l+1].f[2]=t*l1*gen->inv[l];
+        double flp12=t*l1*gen->inv[l];
+        if (l>gen->mhi)
+          gen->alpha[l+1] = gen->alpha[l-1]*flp12;
+        else
+          gen->alpha[l+1] = 1.;
+        gen->fx[l+1].f[0] = flp10*gen->alpha[l]/gen->alpha[l+1];
+        gen->fx[l+1].f[1] = flp11*gen->fx[l+1].f[0];
         }
-for (int l=0; l<gen->lmax+3; ++l)
-  {gen->alpha[l] = gen->fxx[l].f[0] = gen->fxx[l].f[1] = 0;}
-gen->alpha[gen->mhi]=gen->alpha[gen->mhi+1]=1.;
-for (int l=gen->mhi+2; l<gen->lmax+1; ++l)
-  gen->alpha[l] = gen->alpha[l-2]*gen->fx[l].f[2];
-gen->alpha[gen->lmax+1] = gen->alpha[gen->lmax+2] = 0;
-gen->fxx[gen->mhi].f[0] = 0;
-gen->fxx[gen->mhi].f[1] = 0;
-for (int l=gen->mhi; l<gen->lmax+1; ++l)
-{
-  gen->fxx[l+1].f[0] = gen->fx[l+1].f[0]*gen->alpha[l]/gen->alpha[l+1];
-  gen->fxx[l+1].f[1] = gen->fx[l+1].f[1]*gen->fxx[l+1].f[0];
-}
-for (int l=gen->lmax+1; l<gen->lmax+3; ++l)
-  gen->fxx[l].f[0] = gen->fxx[l].f[1] = 0.;
       }
 
     gen->preMinus_p = gen->preMinus_m = 0;
