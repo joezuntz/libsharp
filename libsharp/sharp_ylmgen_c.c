@@ -203,21 +203,21 @@ void sharp_Ylmgen_prepare (sharp_Ylmgen_C *gen, int m)
            *gen->flm2[l+gen->s]*gen->flm2[l-gen->s];
         gen->fx[l+1].f[2]=t*l1*gen->inv[l];
         }
-// calculate alpha <=> index 3
+for (int l=0; l<gen->lmax+3; ++l)
+  {gen->alpha[l] = gen->fxx[l].f[0] = gen->fxx[l].f[1] = 0;}
 gen->alpha[gen->mhi]=gen->alpha[gen->mhi+1]=1.;
-for (int l=gen->mhi+2; l<gen->lmax; ++l)
-{
-  gen->alpha[l] = gen->alpha[l-2]*gen->fx[l+1].f[2];
-//  printf("%d %e %e\n", l, gen->fx[l].f[2], gen->alpha[l]);
-}
+for (int l=gen->mhi+2; l<gen->lmax+1; ++l)
+  gen->alpha[l] = gen->alpha[l-2]*gen->fx[l].f[2];
+gen->alpha[gen->lmax+1] = gen->alpha[gen->lmax+2] = 0;
 gen->fxx[gen->mhi].f[0] = 0;
-gen->fxx[gen->mhi].f[0] = 0;
-for (int l=gen->mhi+1; l<gen->lmax+1; ++l)
+gen->fxx[gen->mhi].f[1] = 0;
+for (int l=gen->mhi; l<gen->lmax+1; ++l)
 {
-  gen->fxx[l].f[0] = gen->fx[l].f[0]*gen->alpha[l-1]/gen->alpha[l];
-  gen->fxx[l].f[1] = gen->fx[l].f[1]*gen->fxx[l].f[0];
+  gen->fxx[l+1].f[0] = gen->fx[l+1].f[0]*gen->alpha[l]/gen->alpha[l+1];
+  gen->fxx[l+1].f[1] = gen->fx[l+1].f[1]*gen->fxx[l+1].f[0];
 }
-
+for (int l=gen->lmax+1; l<gen->lmax+3; ++l)
+  gen->fxx[l].f[0] = gen->fxx[l].f[1] = 0.;
       }
 
     gen->preMinus_p = gen->preMinus_m = 0;
