@@ -25,7 +25,7 @@
 /*! \file sharp.h
  *  Portable interface for the spherical transform library.
  *
- *  Copyright (C) 2012-2018 Max-Planck-Society
+ *  Copyright (C) 2012-2019 Max-Planck-Society
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
@@ -258,8 +258,6 @@ int sharp_execute_mpi_maybe (void *pcomm, sharp_jobtype type, int spin,
   void *alm, void *map, const sharp_geom_info *geom_info,
   const sharp_alm_info *alm_info, int flags, double *time,
   unsigned long long *opcnt);
-
-
 
 /*! \} */
 

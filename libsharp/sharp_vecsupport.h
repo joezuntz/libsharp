@@ -76,6 +76,11 @@ static inline Tv vmax (Tv a, Tv b) { return (a>b) ? a : b; }
 #define vanyTrue(a) (a)
 #define vallTrue(a) (a)
 
+static inline void vhsum_cmplx_special (Tv a, Tv b, Tv c, Tv d,
+  _Complex double * restrict cc)
+  { cc[0] += a+_Complex_I*b; cc[1] += c+_Complex_I*d; }
+
+
 #endif
 
 #if (VLEN==2)
@@ -119,6 +124,21 @@ static inline Tv vblend__(Tv m, Tv a, Tv b)
 #define vanyTrue(a) (_mm_movemask_pd(a)!=0)
 #define vallTrue(a) (_mm_movemask_pd(a)==3)
 
+static inline void vhsum_cmplx_special (Tv a, Tv b, Tv c,
+  Tv d, _Complex double * restrict cc)
+  {
+  union {Tv v; _Complex double c; } u1, u2;
+#if defined(__SSE3__)
+  u1.v = _mm_hadd_pd(a,b); u2.v=_mm_hadd_pd(c,d);
+#else
+  u1.v = _mm_shuffle_pd(a,b,_MM_SHUFFLE2(0,1)) +
+         _mm_shuffle_pd(a,b,_MM_SHUFFLE2(1,0));
+  u2.v = _mm_shuffle_pd(c,d,_MM_SHUFFLE2(0,1)) +
+         _mm_shuffle_pd(c,d,_MM_SHUFFLE2(1,0));
+#endif
+  cc[0]+=u1.c; cc[1]+=u2.c;
+  }
+
 #endif
 
 #if (VLEN==4)
@@ -150,6 +170,18 @@ typedef __m256d Tm;
 #define vanyTrue(a) (_mm256_movemask_pd(a)!=0)
 #define vallTrue(a) (_mm256_movemask_pd(a)==15)
 
+static inline void vhsum_cmplx_special (Tv a, Tv b, Tv c, Tv d,
+  _Complex double * restrict cc)
+  {
+  Tv tmp1=_mm256_hadd_pd(a,b), tmp2=_mm256_hadd_pd(c,d);
+  Tv tmp3=_mm256_permute2f128_pd(tmp1,tmp2,49),
+     tmp4=_mm256_permute2f128_pd(tmp1,tmp2,32);
+  tmp1=tmp3+tmp4;
+  union {Tv v; _Complex double c[2]; } u;
+  u.v=tmp1;
+  cc[0]+=u.c[0]; cc[1]+=u.c[1];
+  }
+
 #endif
 
 #if (VLEN==8)
@@ -179,6 +211,13 @@ typedef __mmask8 Tm;
 #define vmax(a,b) _mm512_max_pd(a,b)
 #define vanyTrue(a) (a!=0)
 #define vallTrue(a) (a==255)
+
+static inline void vhsum_cmplx_special (Tv a, Tv b, Tv c, Tv d,
+  _Complex double * restrict cc)
+  {
+  cc[0] += _mm512_reduce_add_pd(a)+_Complex_I*_mm512_reduce_add_pd(b);
+  cc[1] += _mm512_reduce_add_pd(c)+_Complex_I*_mm512_reduce_add_pd(d);
+  }
 
 #endif
 

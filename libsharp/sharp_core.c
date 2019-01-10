@@ -33,7 +33,6 @@
 #include <math.h>
 #include <string.h>
 #include "sharp_vecsupport.h"
-#include "sharp_complex_hacks.h"
 #include "sharp.h"
 #include "sharp_internal.h"
 #include "c_utils.h"
