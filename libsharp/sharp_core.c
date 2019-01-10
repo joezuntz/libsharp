@@ -1096,7 +1096,7 @@ int sharp_veclen(void)
   return VLEN;
   }
 
-int sharp_max_nvec(void)
+int sharp_max_nvec(int spin)
   {
-  return nv0;
+  return (spin==0) ? nv0 : nvx;
   }

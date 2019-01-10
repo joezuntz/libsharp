@@ -29,8 +29,8 @@
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
-#ifndef PLANCK_SHARP_LOWLEVEL_H
-#define PLANCK_SHARP_LOWLEVEL_H
+#ifndef PLANCK_SHARP_H
+#define PLANCK_SHARP_H
 
 #include <stddef.h>
 
@@ -207,16 +207,13 @@ typedef enum { SHARP_DP              = 1<<4,
   \param type the type of SHT
   \param spin the spin of the quantities to be transformed
   \param alm contains pointers to the a_lm coefficients. If \a spin==0,
-    alm[0] points to the a_lm of the first SHT, alm[1] to those of the second
-    etc. If \a spin>0, alm[0] and alm[1] point to the a_lm of the first SHT,
-    alm[2] and alm[3] to those of the second, etc. The exact data type of \a alm
+    alm[0] points to the a_lm of the SHT. If \a spin>0, alm[0] and alm[1]
+    point to the two a_lm sets of the SHT. The exact data type of \a alm
     depends on whether the SHARP_DP flag is set.
   \param map contains pointers to the maps. If \a spin==0,
-    map[0] points to the map of the first SHT, map[1] to that of the second
-    etc. If \a spin>0, or \a type is SHARP_ALM2MAP_DERIV1, map[0] and map[1]
-    point to the maps of the first SHT, map[2] and map[3] to those of the
-    second, etc. The exact data type of \a map depends on whether the SHARP_DP
-    flag is set.
+    map[0] points to the map of the SHT. If \a spin>0, or \a type is
+    SHARP_ALM2MAP_DERIV1, map[0] and map[1] point to the two maps of the SHT.
+    The exact data type of \a map depends on whether the SHARP_DP flag is set.
   \param geom_info A \c sharp_geom_info object compatible with the provided
     \a map arrays.
   \param alm_info A \c sharp_alm_info object compatible with the provided

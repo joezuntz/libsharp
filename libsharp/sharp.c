@@ -853,7 +853,8 @@ NOINLINE static void sharp_execute_job (sharp_job *job)
   init_output (job);
 
   int nchunks, chunksize;
-  get_chunk_info(job->ginfo->npairs,sharp_veclen()*sharp_max_nvec(),&nchunks,&chunksize);
+  get_chunk_info(job->ginfo->npairs,sharp_veclen()*sharp_max_nvec(job->spin),
+                 &nchunks,&chunksize);
 //FIXME: needs to be changed to "nm"
   alloc_phase (job,mmax+1,chunksize);
 

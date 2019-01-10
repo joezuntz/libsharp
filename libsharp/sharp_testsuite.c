@@ -24,7 +24,7 @@
 
 /*  \file sharp_testsuite.c
  *
- *  Copyright (C) 2012-2018 Max-Planck-Society
+ *  Copyright (C) 2012-2019 Max-Planck-Society
  *  \author Martin Reinecke
  */
 
@@ -42,8 +42,62 @@
 #include "sharp_geomhelpers.h"
 #include "sharp_almhelpers.h"
 #include "c_utils.h"
-#include "sharp_announce.h"
 #include "memusage.h"
+
+static void OpenMP_status(void)
+  {
+#ifndef _OPENMP
+  printf("OpenMP: not supported by this binary\n");
+#else
+  int threads = omp_get_max_threads();
+  if (threads>1)
+    printf("OpenMP active: max. %d threads.\n",threads);
+  else
+    printf("OpenMP active, but running with 1 thread only.\n");
+#endif
+  }
+
+static void MPI_status(void)
+  {
+#ifndef USE_MPI
+  printf("MPI: not supported by this binary\n");
+#else
+  int tasks;
+  MPI_Comm_size(MPI_COMM_WORLD,&tasks);
+  if (tasks>1)
+    printf("MPI active with %d tasks.\n",tasks);
+  else
+    printf("MPI active, but running with 1 task only.\n");
+#endif
+  }
+
+static void vecmath_status(void)
+  { printf("Supported vector length: %d\n",sharp_veclen()); }
+
+static void sharp_announce (const char *name)
+  {
+  size_t m, nlen=strlen(name);
+  printf("\n+-");
+  for (m=0; m<nlen; ++m) printf("-");
+  printf("-+\n");
+  printf("| %s |\n", name);
+  printf("+-");
+  for (m=0; m<nlen; ++m) printf("-");
+  printf("-+\n\n");
+  vecmath_status();
+  OpenMP_status();
+  MPI_status();
+  printf("\n");
+  }
+
+static void sharp_module_startup (const char *name, int argc, int argc_expected,
+  const char *argv_expected, int verbose)
+  {
+  if (verbose) sharp_announce (name);
+  if (argc==argc_expected) return;
+  if (verbose) fprintf(stderr, "Usage: %s %s\n", name, argv_expected);
+  exit(1);
+  }
 
 typedef complex double dcmplx;
 

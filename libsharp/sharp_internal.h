@@ -25,7 +25,7 @@
 /*! \file sharp_internal.h
  *  Internally used functionality for the spherical transform library.
  *
- *  Copyright (C) 2006-2018 Max-Planck-Society
+ *  Copyright (C) 2006-2019 Max-Planck-Society
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
@@ -67,6 +67,6 @@ void inner_loop (sharp_job *job, const int *ispair,const double *cth,
   const int *mlim);
 
 int sharp_veclen(void);
-int sharp_max_nvec(void);
+int sharp_max_nvec(int spin);
 
 #endif
