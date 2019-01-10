@@ -220,11 +220,15 @@ NOINLINE static void alm2map_kernel(s0data_v * restrict d,
       Tv a2=vload(ab[il+1].f[0]), b2=vload(ab[il+1].f[1]);
       for (int i=0; i<nv0; ++i)
         {
+        d->p1r[i] += d->lam2[i]*ar1;
+        d->p1i[i] += d->lam2[i]*ai1;
+        d->p2r[i] += d->lam2[i]*ar2;
+        d->p2i[i] += d->lam2[i]*ai2;
         d->lam1[i] = (a1*d->csq[i] + b1)*d->lam2[i] + d->lam1[i];
-        d->p1r[i] += d->lam2[i]*ar1 + d->lam1[i]*ar3;
-        d->p1i[i] += d->lam2[i]*ai1 + d->lam1[i]*ai3;
-        d->p2r[i] += d->lam2[i]*ar2 + d->lam1[i]*ar4;
-        d->p2i[i] += d->lam2[i]*ai2 + d->lam1[i]*ai4;
+        d->p1r[i] += d->lam1[i]*ar3;
+        d->p1i[i] += d->lam1[i]*ai3;
+        d->p2r[i] += d->lam1[i]*ar4;
+        d->p2i[i] += d->lam1[i]*ai4;
         d->lam2[i] = (a2*d->csq[i] + b2)*d->lam1[i] + d->lam2[i];
         }
       }
@@ -241,11 +245,15 @@ NOINLINE static void alm2map_kernel(s0data_v * restrict d,
       Tv a2=vload(ab[il+1].f[0]), b2=vload(ab[il+1].f[1]);
       for (int i=0; i<nv2; ++i)
         {
+        d->p1r[i] += d->lam2[i]*ar1;
+        d->p1i[i] += d->lam2[i]*ai1;
+        d->p2r[i] += d->lam2[i]*ar2;
+        d->p2i[i] += d->lam2[i]*ai2;
         d->lam1[i] = (a1*d->csq[i] + b1)*d->lam2[i] + d->lam1[i];
-        d->p1r[i] += d->lam2[i]*ar1 + d->lam1[i]*ar3;
-        d->p1i[i] += d->lam2[i]*ai1 + d->lam1[i]*ai3;
-        d->p2r[i] += d->lam2[i]*ar2 + d->lam1[i]*ar4;
-        d->p2i[i] += d->lam2[i]*ai2 + d->lam1[i]*ai4;
+        d->p1r[i] += d->lam1[i]*ar3;
+        d->p1i[i] += d->lam1[i]*ai3;
+        d->p2r[i] += d->lam1[i]*ar4;
+        d->p2i[i] += d->lam1[i]*ai4;
         d->lam2[i] = (a2*d->csq[i] + b2)*d->lam1[i] + d->lam2[i];
         }
       }
@@ -501,20 +509,56 @@ NOINLINE static void alm2map_spin_kernel(sxdata_v * restrict d,
       {
       d->l1p[i] = (d->cth[i]*fx10 - fx11)*d->l2p[i] - d->l1p[i];
       d->l1m[i] = (d->cth[i]*fx10 + fx11)*d->l2m[i] - d->l1m[i];
-      Tv lw1=d->l2p[i]+d->l2m[i];
-      Tv lx2=d->l1m[i]-d->l1p[i];
-      d->p1pr[i] += agr1*lw1 - aci2*lx2;
-      d->p1pi[i] += agi1*lw1 + acr2*lx2;
-      d->p1mr[i] += acr1*lw1 + agi2*lx2;
-      d->p1mi[i] += aci1*lw1 - agr2*lx2;
-      Tv lx1=d->l2m[i]-d->l2p[i];
-      Tv lw2=d->l1p[i]+d->l1m[i];
+
+// p1pr = a + b - c + d
+// p2mi = a + b + c - d
+//
+// p1pi = a - b + c + d
+// p2mr =-a + b + c + d
+//
+// p1mr = a - b + c + d
+// p2pi =-a + b + c + d
+//
+// p1mi = a + b - c + d
+// p2pr = a + b + c - d
+      d->p1pr[i] += agr1*d->l2p[i];
+      d->p1pi[i] += agi1*d->l2p[i];
+      d->p1mr[i] += acr1*d->l2p[i];
+      d->p1mi[i] += aci1*d->l2p[i];
+//      d->p2pr[i] += aci1*d->l2p[i];
+//      d->p2pi[i] -= acr1*d->l2p[i];
+//      d->p2mr[i] -= agi1*d->l2p[i];
+//      d->p2mi[i] += agr1*d->l2p[i];
+
+      d->p1pr[i] += aci2*d->l1p[i];
+      d->p1pi[i] -= acr2*d->l1p[i];
+      d->p1mr[i] -= agi2*d->l1p[i];
+      d->p1mi[i] += agr2*d->l1p[i];
+//      d->p2pr[i] += agr2*d->l1p[i];
+//      d->p2pi[i] += agi2*d->l1p[i];
+//      d->p2mr[i] += acr2*d->l1p[i];
+//      d->p2mi[i] += aci2*d->l1p[i];
+
+//      d->p1pr[i] -= aci2*d->l1m[i];
+//      d->p1pi[i] += acr2*d->l1m[i];
+//      d->p1mr[i] += agi2*d->l1m[i];
+//      d->p1mi[i] -= agr2*d->l1m[i];
+      d->p2pr[i] += agr2*d->l1m[i];
+      d->p2pi[i] += agi2*d->l1m[i];
+      d->p2mr[i] += acr2*d->l1m[i];
+      d->p2mi[i] += aci2*d->l1m[i];
+
+//      d->p1pr[i] += agr1*d->l2m[i];
+//      d->p1pi[i] += agi1*d->l2m[i];
+//      d->p1mr[i] += acr1*d->l2m[i];
+//      d->p1mi[i] += aci1*d->l2m[i];
+      d->p2pr[i] -= aci1*d->l2m[i];
+      d->p2pi[i] += acr1*d->l2m[i];
+      d->p2mr[i] += agi1*d->l2m[i];
+      d->p2mi[i] -= agr1*d->l2m[i];
+
       d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
       d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
-      d->p2pr[i] += agr2*lw2 - aci1*lx1;
-      d->p2pi[i] += agi2*lw2 + acr1*lx1;
-      d->p2mr[i] += acr2*lw2 + agi1*lx1;
-      d->p2mi[i] += aci2*lw2 - agr1*lx1;
       }
     l+=2;
     }
@@ -528,7 +572,7 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
   iter_to_ieee_spin(gen, d, &l, nv2);
   job->opcnt += (l-gen->mhi) * 7*nth;
   if (l>lmax) return;
-  job->opcnt += (lmax+1-l) * 25*nth;
+  job->opcnt += (lmax+1-l) * 23*nth;
 
   const sharp_ylmgen_dbl2 * restrict fx = gen->fx;
   const dcmplx * restrict alm=job->almtmp;
@@ -554,18 +598,28 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
       {
       d->l1p[i] = (d->cth[i]*fx10 - fx11)*d->l2p[i] - d->l1p[i];
       d->l1m[i] = (d->cth[i]*fx10 + fx11)*d->l2m[i] - d->l1m[i];
-      Tv lw1=d->l2p[i]*d->cfp[i] + d->l2m[i]*d->cfm[i];
-      Tv lx2=d->l1m[i]*d->cfm[i] - d->l1p[i]*d->cfp[i];
-      d->p1pr[i] += agr1*lw1 - aci2*lx2;
-      d->p1pi[i] += agi1*lw1 + acr2*lx2;
-      d->p1mr[i] += acr1*lw1 + agi2*lx2;
-      d->p1mi[i] += aci1*lw1 - agr2*lx2;
-      Tv lx1=d->l2m[i]*d->cfm[i] - d->l2p[i]*d->cfp[i];
-      Tv lw2=d->l1p[i]*d->cfp[i] + d->l1m[i]*d->cfm[i];
-      d->p2pr[i] += agr2*lw2 - aci1*lx1;
-      d->p2pi[i] += agi2*lw2 + acr1*lx1;
-      d->p2mr[i] += acr2*lw2 + agi1*lx1;
-      d->p2mi[i] += aci2*lw2 - agr1*lx1;
+
+      Tv l2p=d->l2p[i]*d->cfp[i], l2m=d->l2m[i]*d->cfm[i];
+      Tv l1m=d->l1m[i]*d->cfm[i], l1p=d->l1p[i]*d->cfp[i];
+      d->p1pr[i] += agr1*l2p;
+      d->p1pi[i] += agi1*l2p;
+      d->p1mr[i] += acr1*l2p;
+      d->p1mi[i] += aci1*l2p;
+
+      d->p1pr[i] += aci2*l1p;
+      d->p1pi[i] -= acr2*l1p;
+      d->p1mr[i] -= agi2*l1p;
+      d->p1mi[i] += agr2*l1p;
+
+      d->p2pr[i] += agr2*l1m;
+      d->p2pi[i] += agi2*l1m;
+      d->p2mr[i] += acr2*l1m;
+      d->p2mi[i] += aci2*l1m;
+
+      d->p2pr[i] -= aci1*l2m;
+      d->p2pi[i] += acr1*l2m;
+      d->p2mr[i] += agi1*l2m;
+      d->p2mi[i] -= agr1*l2m;
       d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
       d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
       if (rescale(&d->l1p[i], &d->l2p[i], &d->scp[i], vload(sharp_ftol)))
@@ -587,6 +641,15 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
     d->l2m[i] *= d->cfm[i];
     }
   alm2map_spin_kernel(d, fx, alm, l, lmax, nv2);
+
+  for (int i=0; i<nv2; ++i)
+    {
+    Tv tmp;
+    tmp = d->p1pr[i]; d->p1pr[i] -= d->p2mi[i]; d->p2mi[i] += tmp;
+    tmp = d->p1pi[i]; d->p1pi[i] += d->p2mr[i]; d->p2mr[i] -= tmp;
+    tmp = d->p1mr[i]; d->p1mr[i] += d->p2pi[i]; d->p2pi[i] -= tmp;
+    tmp = d->p1mi[i]; d->p1mi[i] -= d->p2pr[i]; d->p2pr[i] += tmp;
+    }
   }
 
 NOINLINE static void map2alm_spin_kernel(sxdata_v * restrict d,
