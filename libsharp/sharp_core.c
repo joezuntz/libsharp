@@ -531,6 +531,8 @@ NOINLINE static void alm2map_spin_kernel(sxdata_v * restrict d,
 
       d->l1p[i] = (d->cth[i]*fx10 - fx11)*d->l2p[i] - d->l1p[i];
       d->l1m[i] = (d->cth[i]*fx10 + fx11)*d->l2m[i] - d->l1m[i];
+      d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
+      d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
 
       d->p1pr[i] += aci2*d->l1p[i];
       d->p1pi[i] -= acr2*d->l1p[i];
@@ -542,8 +544,8 @@ NOINLINE static void alm2map_spin_kernel(sxdata_v * restrict d,
       d->p2mr[i] += acr2*d->l1m[i];
       d->p2mi[i] += aci2*d->l1m[i];
 
-      d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
-      d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
+//      d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
+//      d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
       }
     l+=2;
     }
