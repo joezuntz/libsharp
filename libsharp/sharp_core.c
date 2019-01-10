@@ -507,8 +507,6 @@ NOINLINE static void alm2map_spin_kernel(sxdata_v * restrict d,
        acr2=vload(creal(alm[2*l+3])), aci2=vload(cimag(alm[2*l+3]));
     for (int i=0; i<nv2; ++i)
       {
-      d->l1p[i] = (d->cth[i]*fx10 - fx11)*d->l2p[i] - d->l1p[i];
-      d->l1m[i] = (d->cth[i]*fx10 + fx11)*d->l2m[i] - d->l1m[i];
 
 // p1pr = a + b - c + d
 // p2mi = a + b + c - d
@@ -525,37 +523,24 @@ NOINLINE static void alm2map_spin_kernel(sxdata_v * restrict d,
       d->p1pi[i] += agi1*d->l2p[i];
       d->p1mr[i] += acr1*d->l2p[i];
       d->p1mi[i] += aci1*d->l2p[i];
-//      d->p2pr[i] += aci1*d->l2p[i];
-//      d->p2pi[i] -= acr1*d->l2p[i];
-//      d->p2mr[i] -= agi1*d->l2p[i];
-//      d->p2mi[i] += agr1*d->l2p[i];
+
+      d->p2pr[i] -= aci1*d->l2m[i];
+      d->p2pi[i] += acr1*d->l2m[i];
+      d->p2mr[i] += agi1*d->l2m[i];
+      d->p2mi[i] -= agr1*d->l2m[i];
+
+      d->l1p[i] = (d->cth[i]*fx10 - fx11)*d->l2p[i] - d->l1p[i];
+      d->l1m[i] = (d->cth[i]*fx10 + fx11)*d->l2m[i] - d->l1m[i];
 
       d->p1pr[i] += aci2*d->l1p[i];
       d->p1pi[i] -= acr2*d->l1p[i];
       d->p1mr[i] -= agi2*d->l1p[i];
       d->p1mi[i] += agr2*d->l1p[i];
-//      d->p2pr[i] += agr2*d->l1p[i];
-//      d->p2pi[i] += agi2*d->l1p[i];
-//      d->p2mr[i] += acr2*d->l1p[i];
-//      d->p2mi[i] += aci2*d->l1p[i];
 
-//      d->p1pr[i] -= aci2*d->l1m[i];
-//      d->p1pi[i] += acr2*d->l1m[i];
-//      d->p1mr[i] += agi2*d->l1m[i];
-//      d->p1mi[i] -= agr2*d->l1m[i];
       d->p2pr[i] += agr2*d->l1m[i];
       d->p2pi[i] += agi2*d->l1m[i];
       d->p2mr[i] += acr2*d->l1m[i];
       d->p2mi[i] += aci2*d->l1m[i];
-
-//      d->p1pr[i] += agr1*d->l2m[i];
-//      d->p1pi[i] += agi1*d->l2m[i];
-//      d->p1mr[i] += acr1*d->l2m[i];
-//      d->p1mi[i] += aci1*d->l2m[i];
-      d->p2pr[i] -= aci1*d->l2m[i];
-      d->p2pi[i] += acr1*d->l2m[i];
-      d->p2mr[i] += agi1*d->l2m[i];
-      d->p2mi[i] -= agr1*d->l2m[i];
 
       d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
       d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
