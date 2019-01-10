@@ -497,6 +497,7 @@ NOINLINE static void alm2map_spin_kernel(sxdata_v * restrict d,
   const sharp_ylmgen_dbl2 * restrict fx, const dcmplx * restrict alm,
   int l, int lmax, int nv2)
   {
+  int lsave = l;
   while (l<=lmax)
     {
     Tv fx10=vload(fx[l+1].f[0]),fx11=vload(fx[l+1].f[1]);
@@ -507,45 +508,44 @@ NOINLINE static void alm2map_spin_kernel(sxdata_v * restrict d,
        acr2=vload(creal(alm[2*l+3])), aci2=vload(cimag(alm[2*l+3]));
     for (int i=0; i<nv2; ++i)
       {
-
-// p1pr = a + b - c + d
-// p2mi = a + b + c - d
-//
-// p1pi = a - b + c + d
-// p2mr =-a + b + c + d
-//
-// p1mr = a - b + c + d
-// p2pi =-a + b + c + d
-//
-// p1mi = a + b - c + d
-// p2pr = a + b + c - d
       d->p1pr[i] += agr1*d->l2p[i];
       d->p1pi[i] += agi1*d->l2p[i];
       d->p1mr[i] += acr1*d->l2p[i];
       d->p1mi[i] += aci1*d->l2p[i];
 
-      d->p2pr[i] -= aci1*d->l2m[i];
-      d->p2pi[i] += acr1*d->l2m[i];
-      d->p2mr[i] += agi1*d->l2m[i];
-      d->p2mi[i] -= agr1*d->l2m[i];
-
       d->l1p[i] = (d->cth[i]*fx10 - fx11)*d->l2p[i] - d->l1p[i];
-      d->l1m[i] = (d->cth[i]*fx10 + fx11)*d->l2m[i] - d->l1m[i];
       d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
-      d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
 
       d->p1pr[i] += aci2*d->l1p[i];
       d->p1pi[i] -= acr2*d->l1p[i];
       d->p1mr[i] -= agi2*d->l1p[i];
       d->p1mi[i] += agr2*d->l1p[i];
+      }
+    l+=2;
+    }
+  l=lsave;
+  while (l<=lmax)
+    {
+    Tv fx10=vload(fx[l+1].f[0]),fx11=vload(fx[l+1].f[1]);
+    Tv fx20=vload(fx[l+2].f[0]),fx21=vload(fx[l+2].f[1]);
+    Tv agr1=vload(creal(alm[2*l  ])), agi1=vload(cimag(alm[2*l  ])),
+       acr1=vload(creal(alm[2*l+1])), aci1=vload(cimag(alm[2*l+1]));
+    Tv agr2=vload(creal(alm[2*l+2])), agi2=vload(cimag(alm[2*l+2])),
+       acr2=vload(creal(alm[2*l+3])), aci2=vload(cimag(alm[2*l+3]));
+    for (int i=0; i<nv2; ++i)
+      {
+      d->p2pr[i] -= aci1*d->l2m[i];
+      d->p2pi[i] += acr1*d->l2m[i];
+      d->p2mr[i] += agi1*d->l2m[i];
+      d->p2mi[i] -= agr1*d->l2m[i];
+
+      d->l1m[i] = (d->cth[i]*fx10 + fx11)*d->l2m[i] - d->l1m[i];
+      d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
 
       d->p2pr[i] += agr2*d->l1m[i];
       d->p2pi[i] += agi2*d->l1m[i];
       d->p2mr[i] += acr2*d->l1m[i];
       d->p2mi[i] += aci2*d->l1m[i];
-
-//      d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
-//      d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
       }
     l+=2;
     }
@@ -571,7 +571,7 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
     full_ieee &= vallTrue(vge(d->scp[i],vload(sharp_minscale))) &&
                  vallTrue(vge(d->scm[i],vload(sharp_minscale)));
     }
-
+full_ieee=0;
   while((!full_ieee) && (l<=lmax))
     {
     Tv fx10=vload(fx[l+1].f[0]),fx11=vload(fx[l+1].f[1]);
@@ -607,6 +607,7 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
       d->p2pi[i] += acr1*l2m;
       d->p2mr[i] += agi1*l2m;
       d->p2mi[i] -= agr1*l2m;
+
       d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
       d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
       if (rescale(&d->l1p[i], &d->l2p[i], &d->scp[i], vload(sharp_ftol)))
@@ -615,6 +616,7 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
       if (rescale(&d->l1m[i], &d->l2m[i], &d->scm[i], vload(sharp_ftol)))
         getCorfac(d->scm[i], &d->cfm[i], gen->cf);
       full_ieee &= vallTrue(vge(d->scm[i],vload(sharp_minscale)));
+      full_ieee=0;
       }
     l+=2;
     }
@@ -653,20 +655,40 @@ NOINLINE static void map2alm_spin_kernel(sxdata_v * restrict d,
       {
       d->l1p[i] = (d->cth[i]*fx10 - fx11)*d->l2p[i] - d->l1p[i];
       d->l1m[i] = (d->cth[i]*fx10 + fx11)*d->l2m[i] - d->l1m[i];
-      Tv lw = d->l2p[i] + d->l2m[i];
-      Tv lx = d->l2m[i] - d->l2p[i];
-      agr1 += d->p1pr[i]*lw - d->p2mi[i]*lx;;
-      agi1 += d->p1pi[i]*lw + d->p2mr[i]*lx;
-      acr1 += d->p1mr[i]*lw + d->p2pi[i]*lx;
-      aci1 += d->p1mi[i]*lw - d->p2pr[i]*lx;
+      agr1 += d->p1pr[i]*d->l2p[i];
+      agr1 += d->p1pr[i]*d->l2m[i];
+      agr1 -= d->p2mi[i]*d->l2m[i];
+      agr1 += d->p2mi[i]*d->l2p[i];
+      agi1 += d->p1pi[i]*d->l2p[i];
+      agi1 += d->p1pi[i]*d->l2m[i];
+      agi1 += d->p2mr[i]*d->l2m[i];
+      agi1 -= d->p2mr[i]*d->l2p[i];
+      acr1 += d->p1mr[i]*d->l2p[i];
+      acr1 += d->p1mr[i]*d->l2m[i];
+      acr1 += d->p2pi[i]*d->l2m[i];
+      acr1 -= d->p2pi[i]*d->l2p[i];
+      aci1 += d->p1mi[i]*d->l2p[i];
+      aci1 += d->p1mi[i]*d->l2m[i];
+      aci1 -= d->p2pr[i]*d->l2m[i];
+      aci1 += d->p2pr[i]*d->l2p[i];
       d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
       d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
-      lw = d->l1p[i] + d->l1m[i];
-      lx = d->l1m[i] - d->l1p[i];
-      agr2 += d->p2pr[i]*lw - d->p1mi[i]*lx;
-      agi2 += d->p2pi[i]*lw + d->p1mr[i]*lx;
-      acr2 += d->p2mr[i]*lw + d->p1pi[i]*lx;
-      aci2 += d->p2mi[i]*lw - d->p1pr[i]*lx;
+      agr2 += d->p2pr[i]*d->l1p[i];
+      agr2 += d->p2pr[i]*d->l1m[i];
+      agr2 -= d->p1mi[i]*d->l1m[i];
+      agr2 += d->p1mi[i]*d->l1p[i];
+      agi2 += d->p2pi[i]*d->l1p[i];
+      agi2 += d->p2pi[i]*d->l1m[i];
+      agi2 += d->p1mr[i]*d->l1m[i];
+      agi2 -= d->p1mr[i]*d->l1p[i];
+      acr2 += d->p2mr[i]*d->l1p[i];
+      acr2 += d->p2mr[i]*d->l1m[i];
+      acr2 += d->p1pi[i]*d->l1m[i];
+      acr2 -= d->p1pi[i]*d->l1p[i];
+      aci2 += d->p2mi[i]*d->l1p[i];
+      aci2 += d->p2mi[i]*d->l1m[i];
+      aci2 -= d->p1pr[i]*d->l1m[i];
+      aci2 += d->p1pr[i]*d->l1p[i];
       }
     vhsum_cmplx_special (agr1,agi1,acr1,aci1,&alm[2*l]);
     vhsum_cmplx_special (agr2,agi2,acr2,aci2,&alm[2*l+2]);
@@ -695,6 +717,7 @@ NOINLINE static void calc_map2alm_spin (sharp_job * restrict job,
                  vallTrue(vge(d->scm[i],vload(sharp_minscale)));
     }
 
+full_ieee=0;
   while((!full_ieee) && (l<=lmax))
     {
     Tv fx10=vload(fx[l+1].f[0]),fx11=vload(fx[l+1].f[1]);
@@ -706,26 +729,62 @@ NOINLINE static void calc_map2alm_spin (sharp_job * restrict job,
       {
       d->l1p[i] = (d->cth[i]*fx10 - fx11)*d->l2p[i] - d->l1p[i];
       d->l1m[i] = (d->cth[i]*fx10 + fx11)*d->l2m[i] - d->l1m[i];
-      Tv lw = d->l2p[i]*d->cfp[i] + d->l2m[i]*d->cfm[i];
-      Tv lx = d->l2m[i]*d->cfm[i] - d->l2p[i]*d->cfp[i];
-      agr1 += d->p1pr[i]*lw - d->p2mi[i]*lx;
-      agi1 += d->p1pi[i]*lw + d->p2mr[i]*lx;
-      acr1 += d->p1mr[i]*lw + d->p2pi[i]*lx;
-      aci1 += d->p1mi[i]*lw - d->p2pr[i]*lx;
-      d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
-      d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
-      lw = d->l1p[i]*d->cfp[i] + d->l1m[i]*d->cfm[i];
-      lx = d->l1m[i]*d->cfm[i] - d->l1p[i]*d->cfp[i];
-      agr2 += d->p2pr[i]*lw - d->p1mi[i]*lx;
-      agi2 += d->p2pi[i]*lw + d->p1mr[i]*lx;
-      acr2 += d->p2mr[i]*lw + d->p1pi[i]*lx;
-      aci2 += d->p2mi[i]*lw - d->p1pr[i]*lx;
+      Tv l2p = d->l2p[i]*d->cfp[i], l2m = d->l2m[i]*d->cfm[i];
+      Tv l1p = d->l1p[i]*d->cfp[i], l1m = d->l1m[i]*d->cfm[i];
+      agr1 += d->p1pr[i]*l2p;
+      agr1 += d->p1pr[i]*l2m;
+      agr1 -= d->p2mi[i]*l2m;
+      agr1 += d->p2mi[i]*l2p;
+      agi1 += d->p1pi[i]*l2p;
+      agi1 += d->p1pi[i]*l2m;
+      agi1 += d->p2mr[i]*l2m;
+      agi1 -= d->p2mr[i]*l2p;
+      acr1 += d->p1mr[i]*l2p;
+      acr1 += d->p1mr[i]*l2m;
+      acr1 += d->p2pi[i]*l2m;
+      acr1 -= d->p2pi[i]*l2p;
+      aci1 += d->p1mi[i]*l2p;
+      aci1 += d->p1mi[i]*l2m;
+      aci1 -= d->p2pr[i]*l2m;
+      aci1 += d->p2pr[i]*l2p;
+      agr2 += d->p2pr[i]*l1p;
+      agr2 += d->p2pr[i]*l1m;
+      agr2 -= d->p1mi[i]*l1m;
+      agr2 += d->p1mi[i]*l1p;
+      agi2 += d->p2pi[i]*l1p;
+      agi2 += d->p2pi[i]*l1m;
+      agi2 += d->p1mr[i]*l1m;
+      agi2 -= d->p1mr[i]*l1p;
+      acr2 += d->p2mr[i]*l1p;
+      acr2 += d->p2mr[i]*l1m;
+      acr2 += d->p1pi[i]*l1m;
+      acr2 -= d->p1pi[i]*l1p;
+      aci2 += d->p2mi[i]*l1p;
+      aci2 += d->p2mi[i]*l1m;
+      aci2 -= d->p1pr[i]*l1m;
+      aci2 += d->p1pr[i]*l1p;
+
+//       Tv lw = d->l2p[i]*d->cfp[i] + d->l2m[i]*d->cfm[i];
+//       Tv lx = d->l2m[i]*d->cfm[i] - d->l2p[i]*d->cfp[i];
+//       agr1 += d->p1pr[i]*lw - d->p2mi[i]*lx;
+//       agi1 += d->p1pi[i]*lw + d->p2mr[i]*lx;
+//       acr1 += d->p1mr[i]*lw + d->p2pi[i]*lx;
+//       aci1 += d->p1mi[i]*lw - d->p2pr[i]*lx;
+       d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
+       d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
+//       lw = d->l1p[i]*d->cfp[i] + d->l1m[i]*d->cfm[i];
+//       lx = d->l1m[i]*d->cfm[i] - d->l1p[i]*d->cfp[i];
+//       agr2 += d->p2pr[i]*lw - d->p1mi[i]*lx;
+//       agi2 += d->p2pi[i]*lw + d->p1mr[i]*lx;
+//       acr2 += d->p2mr[i]*lw + d->p1pi[i]*lx;
+//       aci2 += d->p2mi[i]*lw - d->p1pr[i]*lx;
       if (rescale(&d->l1p[i], &d->l2p[i], &d->scp[i], vload(sharp_ftol)))
         getCorfac(d->scp[i], &d->cfp[i], gen->cf);
       full_ieee &= vallTrue(vge(d->scp[i],vload(sharp_minscale)));
       if (rescale(&d->l1m[i], &d->l2m[i], &d->scm[i], vload(sharp_ftol)))
         getCorfac(d->scm[i], &d->cfm[i], gen->cf);
       full_ieee &= vallTrue(vge(d->scm[i],vload(sharp_minscale)));
+      full_ieee=0;
       }
     vhsum_cmplx_special (agr1,agi1,acr1,aci1,&alm[2*l]);
     vhsum_cmplx_special (agr2,agi2,acr2,aci2,&alm[2*l+2]);
