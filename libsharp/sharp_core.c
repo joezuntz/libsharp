@@ -588,6 +588,7 @@ full_ieee=0;
 
       Tv l2p=d->l2p[i]*d->cfp[i], l2m=d->l2m[i]*d->cfm[i];
       Tv l1m=d->l1m[i]*d->cfm[i], l1p=d->l1p[i]*d->cfp[i];
+
       d->p1pr[i] += agr1*l2p;
       d->p1pi[i] += agi1*l2p;
       d->p1mr[i] += acr1*l2p;
