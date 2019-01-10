@@ -19,7 +19,6 @@ src_sharp = \
   libsharp/sharp_internal.h \
   libsharp/sharp_legendre_roots.h \
   libsharp/sharp_vecsupport.h \
-  libsharp/sharp_vecutil.h \
   libsharp/sharp_ylmgen_c.h
 
 include_HEADERS = \

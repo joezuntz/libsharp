@@ -33,7 +33,20 @@
 #define SHARP_VECSUPPORT_H
 
 #include <math.h>
-#include "sharp_vecutil.h"
+
+#ifndef VLEN
+
+#if (defined(__AVX512F__))
+#define VLEN 8
+#elif (defined (__AVX__))
+#define VLEN 4
+#elif (defined (__SSE2__))
+#define VLEN 2
+#else
+#define VLEN 1
+#endif
+
+#endif
 
 typedef double Ts;
 

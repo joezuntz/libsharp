@@ -39,13 +39,6 @@
 
 #if (VLEN==1)
 
-static inline _Complex double vhsum_cmplx(Tv a, Tv b)
-  { return a+_Complex_I*b; }
-
-static inline void vhsum_cmplx2 (Tv a, Tv b, Tv c, Tv d,
-  _Complex double * restrict c1, _Complex double * restrict c2)
-  { *c1 += a+_Complex_I*b; *c2 += c+_Complex_I*d; }
-
 static inline void vhsum_cmplx_special (Tv a, Tv b, Tv c, Tv d,
   _Complex double * restrict cc)
   { cc[0] += a+_Complex_I*b; cc[1] += c+_Complex_I*d; }
@@ -53,18 +46,6 @@ static inline void vhsum_cmplx_special (Tv a, Tv b, Tv c, Tv d,
 #endif
 
 #if (VLEN==2)
-
-static inline _Complex double vhsum_cmplx (Tv a, Tv b)
-  {
-#if defined(__SSE3__)
-  Tv tmp = _mm_hadd_pd(a,b);
-#else
-  Tv tmp = _mm_shuffle_pd(a,b,_MM_SHUFFLE2(0,1)) +
-           _mm_shuffle_pd(a,b,_MM_SHUFFLE2(1,0));
-#endif
-  union {Tv v; _Complex double c; } u;
-  u.v=tmp; return u.c;
-  }
 
 static inline void vhsum_cmplx2 (Tv a, Tv b, Tv c,
   Tv d, _Complex double * restrict c1, _Complex double * restrict c2)
@@ -101,38 +82,6 @@ static inline void vhsum_cmplx_special (Tv a, Tv b, Tv c, Tv d,
 
 #if (VLEN==4)
 
-static inline _Complex double vhsum_cmplx (Tv a, Tv b)
-  {
-  Tv tmp=_mm256_hadd_pd(a,b);
-  Tv tmp2=_mm256_permute2f128_pd(tmp,tmp,1);
-  tmp=_mm256_add_pd(tmp,tmp2);
-#ifdef UNSAFE_CODE
-  _Complex double ret;
-  *((__m128d *)&ret)=_mm256_extractf128_pd(tmp, 0);
-  return ret;
-#else
-  union {Tv v; _Complex double c[2]; } u;
-  u.v=tmp; return u.c[0];
-#endif
-  }
-
-static inline void vhsum_cmplx2 (Tv a, Tv b, Tv c, Tv d,
-  _Complex double * restrict c1, _Complex double * restrict c2)
-  {
-  Tv tmp1=_mm256_hadd_pd(a,b), tmp2=_mm256_hadd_pd(c,d);
-  Tv tmp3=_mm256_permute2f128_pd(tmp1,tmp2,49),
-     tmp4=_mm256_permute2f128_pd(tmp1,tmp2,32);
-  tmp1=tmp3+tmp4;
-#ifdef UNSAFE_CODE
-  *((__m128d *)c1)=_mm_add_pd(*((__m128d *)c1),_mm256_extractf128_pd(tmp1, 0));
-  *((__m128d *)c2)=_mm_add_pd(*((__m128d *)c2),_mm256_extractf128_pd(tmp1, 1));
-#else
-  union {Tv v; _Complex double c[2]; } u;
-  u.v=tmp1;
-  *c1+=u.c[0]; *c2+=u.c[1];
-#endif
-  }
-
 static inline void vhsum_cmplx_special (Tv a, Tv b, Tv c, Tv d,
   _Complex double * restrict cc)
   {
@@ -153,16 +102,6 @@ static inline void vhsum_cmplx_special (Tv a, Tv b, Tv c, Tv d,
 #endif
 
 #if (VLEN==8)
-
-static inline _Complex double vhsum_cmplx(Tv a, Tv b)
-  { return _mm512_reduce_add_pd(a)+_Complex_I*_mm512_reduce_add_pd(b); }
-
-static inline void vhsum_cmplx2 (Tv a, Tv b, Tv c, Tv d,
-  _Complex double * restrict c1, _Complex double * restrict c2)
-  {
-  *c1 += _mm512_reduce_add_pd(a)+_Complex_I*_mm512_reduce_add_pd(b);
-  *c2 += _mm512_reduce_add_pd(c)+_Complex_I*_mm512_reduce_add_pd(d);
-  }
 
 static inline void vhsum_cmplx_special (Tv a, Tv b, Tv c, Tv d,
   _Complex double * restrict cc)
