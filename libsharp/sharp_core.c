@@ -587,25 +587,15 @@ NOINLINE static void calc_alm2map_spin (sharp_job * restrict job,
       Tv l2p=d->l2p[i]*d->cfp[i], l2m=d->l2m[i]*d->cfm[i];
       Tv l1m=d->l1m[i]*d->cfm[i], l1p=d->l1p[i]*d->cfp[i];
 
-      d->p1pr[i] += agr1*l2p;
-      d->p1pi[i] += agi1*l2p;
-      d->p1mr[i] += acr1*l2p;
-      d->p1mi[i] += aci1*l2p;
+      d->p1pr[i] += agr1*l2p + aci2*l1p;
+      d->p1pi[i] += agi1*l2p - acr2*l1p;
+      d->p1mr[i] += acr1*l2p - agi2*l1p;
+      d->p1mi[i] += aci1*l2p + agr2*l1p;
 
-      d->p1pr[i] += aci2*l1p;
-      d->p1pi[i] -= acr2*l1p;
-      d->p1mr[i] -= agi2*l1p;
-      d->p1mi[i] += agr2*l1p;
-
-      d->p2pr[i] += agr2*l1m;
-      d->p2pi[i] += agi2*l1m;
-      d->p2mr[i] += acr2*l1m;
-      d->p2mi[i] += aci2*l1m;
-
-      d->p2pr[i] -= aci1*l2m;
-      d->p2pi[i] += acr1*l2m;
-      d->p2mr[i] += agi1*l2m;
-      d->p2mi[i] -= agr1*l2m;
+      d->p2pr[i] += agr2*l1m - aci1*l2m;
+      d->p2pi[i] += agi2*l1m + acr1*l2m;
+      d->p2mr[i] += acr2*l1m + agi1*l2m;
+      d->p2mi[i] += aci2*l1m - agr1*l2m;
 
       d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
       d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
@@ -735,22 +725,14 @@ NOINLINE static void calc_map2alm_spin (sharp_job * restrict job,
       d->l1m[i] = (d->cth[i]*fx10 + fx11)*d->l2m[i] - d->l1m[i];
       Tv l2p = d->l2p[i]*d->cfp[i], l2m = d->l2m[i]*d->cfm[i];
       Tv l1p = d->l1p[i]*d->cfp[i], l1m = d->l1m[i]*d->cfm[i];
-      agr1 += d->p1pr[i]*l2m;
-      agr1 += d->p2mi[i]*l2p;
-      agi1 += d->p1pi[i]*l2m;
-      agi1 -= d->p2mr[i]*l2p;
-      acr1 += d->p1mr[i]*l2m;
-      acr1 -= d->p2pi[i]*l2p;
-      aci1 += d->p1mi[i]*l2m;
-      aci1 += d->p2pr[i]*l2p;
-      agr2 += d->p2pr[i]*l1p;
-      agr2 -= d->p1mi[i]*l1m;
-      agi2 += d->p2pi[i]*l1p;
-      agi2 += d->p1mr[i]*l1m;
-      acr2 += d->p2mr[i]*l1p;
-      acr2 += d->p1pi[i]*l1m;
-      aci2 += d->p2mi[i]*l1p;
-      aci2 -= d->p1pr[i]*l1m;
+      agr1 += d->p1pr[i]*l2m + d->p2mi[i]*l2p;
+      agi1 += d->p1pi[i]*l2m - d->p2mr[i]*l2p;
+      acr1 += d->p1mr[i]*l2m - d->p2pi[i]*l2p;
+      aci1 += d->p1mi[i]*l2m + d->p2pr[i]*l2p;
+      agr2 += d->p2pr[i]*l1p - d->p1mi[i]*l1m;
+      agi2 += d->p2pi[i]*l1p + d->p1mr[i]*l1m;
+      acr2 += d->p2mr[i]*l1p + d->p1pi[i]*l1m;
+      aci2 += d->p2mi[i]*l1p - d->p1pr[i]*l1m;
 
       d->l2p[i] = (d->cth[i]*fx20 - fx21)*d->l1p[i] - d->l2p[i];
       d->l2m[i] = (d->cth[i]*fx20 + fx21)*d->l1m[i] - d->l2m[i];
