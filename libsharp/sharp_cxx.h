@@ -165,13 +165,28 @@ template<typename T> class sharp_cxxjob: public sharp_base
       {
       void *aptr=conv(alm), *mptr=conv(map);
       int flags=cxxjobhelper__<T>::val | (add ? SHARP_ADD : 0);
-      sharp_execute (SHARP_Yt,0,&aptr,&mptr,ginfo,ainfo,1,flags,0,0);
+      sharp_execute (SHARP_Yt,0,&aptr,&mptr,ginfo,ainfo,flags,0,0);
       }
     void alm2map_adjoint (const T *map, std::complex<T> *alm, bool add) const
       {
       void *aptr=conv(alm), *mptr=conv(map);
       int flags=cxxjobhelper__<T>::val | (add ? SHARP_ADD : 0);
       sharp_execute (SHARP_Yt,0,&aptr,&mptr,ginfo,ainfo,flags,0,0);
+      }
+    void alm2map_spin_adjoint (const T *map1, const T *map2, T *alm1, T *alm2,
+      int spin, bool add) const
+      {
+      void *aptr[2], *mptr[2];
+      aptr[0]=conv(alm1); aptr[1]=conv(alm2);
+      mptr[0]=conv(map1); mptr[1]=conv(map2);
+      int flags=cxxjobhelper__<T>::val | (add ? SHARP_ADD : 0);
+      sharp_execute (SHARP_Yt,spin,aptr,mptr,ginfo,ainfo,flags,0,0);
+      }
+    void alm2map_spin_adjoint (const T *map1, const T *map2,
+      std::complex<T> *alm1, std::complex<T> *alm2, int spin, bool add) const
+      {
+      alm2map_spin_adjoint (map1, map2, reinterpret_cast<T *>(alm1),
+        reinterpret_cast<T *>(alm2), spin, add);
       }
     void map2alm (const T *map, T *alm, bool add) const
       {
