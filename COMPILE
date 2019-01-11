@@ -1,0 +1,25 @@
+Libsharp is configured, compiled and installed using GNU autotools.
+The most complicated step for the user is selecting the appropriate compiler
+flags (and in some cases the compiler).
+
+Here are a few (hopefully helpful) examples:
+
+GCC, OpenMP, portable executable:
+CFLAGS="-std=c99 -O3 -ffast-math -flto -fopenmp" ./configure
+
+GCC, OpenMP, specific optimization for the target CPU:
+CFLAGS="-std=c99 -O3 -march=native -ffast-math -flto -fopenmp" ./configure
+
+GCC, no OpenMP, specific optimization for the target CPU:
+CFLAGS="-std=c99 -O3 -march=native -ffast-math -flto" ./configure
+
+Clang:
+CC=clang CFLAGS="-std=c99 -O3 -march=native -ffast-math -flto -fopenmp" ./configure
+
+MPI support:
+CC=mpicc CFLAGS="-DUSE_MPI -std=c99 -O3 -march=native -ffast-math -flto" ./configure
+
+Additional GCC flags for pedantic warning and debugging:
+
+-Wall -Wextra -Wshadow -Wmissing-prototypes -Wfatal-errors -pedantic -g
+-fsanitize=address
