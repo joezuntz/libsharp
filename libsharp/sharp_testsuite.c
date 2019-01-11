@@ -71,9 +71,6 @@ static void MPI_status(void)
 #endif
   }
 
-static void vecmath_status(void)
-  { printf("Supported vector length: %d\n",sharp_veclen()); }
-
 static void sharp_announce (const char *name)
   {
   size_t m, nlen=strlen(name);
@@ -84,7 +81,8 @@ static void sharp_announce (const char *name)
   printf("+-");
   for (m=0; m<nlen; ++m) printf("-");
   printf("-+\n\n");
-  vecmath_status();
+  printf("Detected hardware architecture: %s\n", sharp_architecture());
+  printf("Supported vector length: %d\n", sharp_veclen());
   OpenMP_status();
   MPI_status();
   printf("\n");

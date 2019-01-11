@@ -68,5 +68,6 @@ void inner_loop (sharp_job *job, const int *ispair,const double *cth,
 
 int sharp_veclen(void);
 int sharp_max_nvec(int spin);
+const char *sharp_architecture(void);
 
 #endif
