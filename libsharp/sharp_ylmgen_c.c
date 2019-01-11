@@ -82,14 +82,14 @@ void sharp_Ylmgen_init (sharp_Ylmgen_C *gen, int l_max, int m_max, int spin)
       }
     gen->eps=RALLOC(double, gen->lmax+4);
     gen->alpha=RALLOC(double, gen->lmax/2+2);
-    gen->ab=RALLOC(sharp_ylmgen_dbl2, gen->lmax/2+2);
+    gen->coef=RALLOC(sharp_ylmgen_dbl2, gen->lmax/2+2);
     }
   else
     {
     gen->m=gen->mlo=gen->mhi=-1234567890;
-    ALLOC(gen->fx,sharp_ylmgen_dbl2,gen->lmax+3);
+    ALLOC(gen->coef,sharp_ylmgen_dbl2,gen->lmax+3);
     for (int m=0; m<gen->lmax+3; ++m)
-      gen->fx[m].f[0]=gen->fx[m].f[1]=0.;
+      gen->coef[m][0]=gen->coef[m][1]=0.;
     ALLOC(gen->alpha,double,gen->lmax+3);
     ALLOC(gen->inv,double,gen->lmax+2);
     gen->inv[0]=0;
@@ -134,19 +134,17 @@ void sharp_Ylmgen_destroy (sharp_Ylmgen_C *gen)
   {
   DEALLOC(gen->cf);
   DEALLOC(gen->powlimit);
+  DEALLOC(gen->alpha);
+  DEALLOC(gen->coef);
   if (gen->s==0)
     {
     DEALLOC(gen->mfac);
     DEALLOC(gen->root);
     DEALLOC(gen->iroot);
     DEALLOC(gen->eps);
-    DEALLOC(gen->alpha);
-    DEALLOC(gen->ab);
     }
   else
     {
-    DEALLOC(gen->fx);
-    DEALLOC(gen->alpha);
     DEALLOC(gen->prefac);
     DEALLOC(gen->fscale);
     DEALLOC(gen->flm1);
@@ -174,9 +172,9 @@ void sharp_Ylmgen_prepare (sharp_Ylmgen_C *gen, int m)
                        /(gen->eps[l+2]*gen->eps[l+3]*gen->alpha[il]);
     for (int il=0, l=m; l<gen->lmax+2; ++il, l+=2)
       {
-      gen->ab[il].f[0] = ((il&1) ? -1 : 1)*gen->alpha[il]*gen->alpha[il];
+      gen->coef[il][0] = ((il&1) ? -1 : 1)*gen->alpha[il]*gen->alpha[il];
       double t1 = gen->eps[l+2], t2 = gen->eps[l+1];
-      gen->ab[il].f[1] = -gen->ab[il].f[0]*(t1*t1+t2*t2);
+      gen->coef[il][1] = -gen->coef[il][0]*(t1*t1+t2*t2);
       }
     }
   else
@@ -190,7 +188,7 @@ void sharp_Ylmgen_prepare (sharp_Ylmgen_C *gen, int m)
     if (!ms_similar)
       {
       gen->alpha[gen->mhi] = 1.;
-      gen->fx[gen->mhi].f[0] = gen->fx[gen->mhi].f[1] = 0.;
+      gen->coef[gen->mhi][0] = gen->coef[gen->mhi][1] = 0.;
       for (int l=gen->mhi; l<gen->lmax+1; ++l)
         {
         double t = gen->flm1[l+gen->m]*gen->flm1[l-gen->m]
@@ -206,8 +204,8 @@ void sharp_Ylmgen_prepare (sharp_Ylmgen_C *gen, int m)
           gen->alpha[l+1] = gen->alpha[l-1]*flp12;
         else
           gen->alpha[l+1] = 1.;
-        gen->fx[l+1].f[0] = flp10*gen->alpha[l]/gen->alpha[l+1];
-        gen->fx[l+1].f[1] = flp11*gen->fx[l+1].f[0];
+        gen->coef[l+1][0] = flp10*gen->alpha[l]/gen->alpha[l+1];
+        gen->coef[l+1][1] = flp11*gen->coef[l+1][0];
         }
       }
 
