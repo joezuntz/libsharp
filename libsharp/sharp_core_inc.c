@@ -22,7 +22,7 @@
  *  (DLR).
  */
 
-/*! \file sharp_core.c
+/*! \file sharp_core_inc.c
  *  Computational core
  *
  *  Copyright (C) 2012-2019 Max-Planck-Society
