@@ -30,7 +30,8 @@ include_HEADERS = \
   libsharp/sharp_cxx.h
 
 EXTRA_DIST = \
-  libsharp/sharp_core_inc.c
+  libsharp/sharp_core_inc.c \
+  runtest.sh
 
 libsharp_la_SOURCES = $(src_sharp)
 
@@ -38,7 +39,7 @@ check_PROGRAMS = sharp_testsuite
 sharp_testsuite_SOURCES = libsharp/sharp_testsuite.c c_utils/memusage.c c_utils/memusage.h c_utils/walltime_c.c c_utils/walltime_c.h
 sharp_testsuite_LDADD = libsharp.la
 
-#TESTS = ffttest
+TESTS = runtest.sh
 
 AM_CFLAGS = -I$(top_srcdir)/c_utils -I$(top_srcdir)/libsharp @AM_CFLAGS@
 
