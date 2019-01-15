@@ -25,7 +25,7 @@
 /*! \file sharp_mpi.c
  *  Functionality only needed for MPI-parallel transforms
  *
- *  Copyright (C) 2012-2013 Max-Planck-Society
+ *  Copyright (C) 2012-2019 Max-Planck-Society
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
@@ -101,7 +101,7 @@ static void sharp_make_mpi_info (MPI_Comm comm, const sharp_job *job,
   DEALLOC(theta_tmp);
   DEALLOC(ispair_tmp);
 
-  minfo->nph=2*job->nmaps*job->ntrans;
+  minfo->nph=2*job->nmaps;
 
   minfo->almcount=RALLOC(int,minfo->ntasks);
   minfo->almdisp=RALLOC(int,minfo->ntasks+1);
@@ -184,8 +184,8 @@ static void alloc_phase_mpi (sharp_job *job, int nm, int ntheta,
   {
   ptrdiff_t phase_size = (job->type==SHARP_MAP2ALM) ?
     (ptrdiff_t)(nmfull)*ntheta : (ptrdiff_t)(nm)*nthetafull;
-  job->phase=RALLOC(dcmplx,2*job->ntrans*job->nmaps*phase_size);
-  job->s_m=2*job->ntrans*job->nmaps;
+  job->phase=RALLOC(dcmplx,2*job->nmaps*phase_size);
+  job->s_m=2*job->nmaps;
   job->s_th = job->s_m * ((job->type==SHARP_MAP2ALM) ? nmfull : nm);
   }
 
@@ -315,12 +315,12 @@ static void sharp_execute_job_mpi (sharp_job *job, MPI_Comm comm)
 
 void sharp_execute_mpi (MPI_Comm comm, sharp_jobtype type, int spin,
   void *alm, void *map, const sharp_geom_info *geom_info,
-  const sharp_alm_info *alm_info, int ntrans, int flags, double *time,
+  const sharp_alm_info *alm_info, int flags, double *time,
   unsigned long long *opcnt)
   {
   sharp_job job;
   sharp_build_job_common (&job, type, spin, alm, map, geom_info, alm_info,
-    ntrans, flags);
+    flags);
 
   sharp_execute_job_mpi (&job, comm);
   if (time!=NULL) *time = job.time;
@@ -331,15 +331,15 @@ void sharp_execute_mpi (MPI_Comm comm, sharp_jobtype type, int spin,
    without declaring it in C header as it should not be available to C code */
 void sharp_execute_mpi_fortran(MPI_Fint comm, sharp_jobtype type, int spin,
   void *alm, void *map, const sharp_geom_info *geom_info,
-  const sharp_alm_info *alm_info, int ntrans, int flags, double *time,
+  const sharp_alm_info *alm_info, int flags, double *time,
   unsigned long long *opcnt);
 void sharp_execute_mpi_fortran(MPI_Fint comm, sharp_jobtype type, int spin,
   void *alm, void *map, const sharp_geom_info *geom_info,
-  const sharp_alm_info *alm_info, int ntrans, int flags, double *time,
+  const sharp_alm_info *alm_info, int flags, double *time,
   unsigned long long *opcnt)
   {
   sharp_execute_mpi(MPI_Comm_f2c(comm), type, spin, alm, map, geom_info,
-                    alm_info, ntrans, flags, time, opcnt);
+                    alm_info, flags, time, opcnt);
   }
 
 #endif

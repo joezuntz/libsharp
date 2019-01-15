@@ -1,43 +1,35 @@
 # Libsharp
 
-*IMPORTANT NOTE*: It appears that the default branch upon cloning from
-github.com/dagss/libsharp was an outdated 'dagss' branch instead of
-the 'master' branch. To get the latest copy,
-please do `git checkout master; git pull`. New clones are no longer affected.
+Library for efficient spherical harmonic transforms at arbitrary spins,
+supporting CPU vectorization, OpenMP and MPI.
 
 ## Paper
 
 https://arxiv.org/abs/1303.4945
 
+## News
+
+### January 2019
+
+This update features significant speedups thanks to important algorithmic
+discoveries by Keiichi Ishioka
+(https://www.jstage.jst.go.jp/article/jmsj/96/2/96_2018-019/_article and
+personal communication).
+
+These improvements reduce the fraction of CPU time spent on evaluating the
+recurrences for Y_lm coefficients, which means that computing multiple
+simultaneous SHTs no longer have a big performance advantage compared to SHTs
+done one after the other.
+As a consequence, libsharp support for simultaneous SHTs was dropped, making
+its interface much simpler.
+
+With the proper compilers and flags (see the file COMPILE for details) libsharp
+is now built with support for SSE2, AVX, AVX2, FMA3, FMA4 and AVX512f and the
+appropriate implementation is selected dynamically at runtime. This should
+provide a very significant performance boost for everyone using pre-compiled
+portable binaries.
+
 ## Compilation
 
-GNU make is required for compilation.
-
-Libsharp compilation has been successfully tested with GNU and Intel compilers.
-When using gcc, version 4.x is required [1].
-Since libsharp was written in standard C99, other compilers should work fine,
-but SSE2/AVX support will most likely be deactivated.
-
-If you obtained libsharp directly from the git repository, you will also
-need a copy of the GNU autotools. In this case, run "autoconf" in libsharp's
-main directory before any other steps.
-For libsharp releases distributed as a .tar.gz file, this step is not necessary.
-
-Afterwards, simply run "./configure"; if this fails, please refer to the output
-of "./configure --help" for additional hints and, if necessary, provide
-additional flags to the configure script.
-Once the script finishes successfully, run "make"
-(or "gmake"). This should install the compilation products in the
-subdirectory "auto/".
-
-Documentation can be created by the command "(g)make doc".
-However this requires the doxygen application to be installed
-on your system.
-The documentation will be created in the subdirectory doc/.
-
-
-[1] Some versions of the gcc 4.4.x release series contain a bug which causes
-the compiler to crash during libsharp compilation. This appears to be fixed
-in the gcc 4.4.7 release. It is possible to work around this problem by adding
-the compiler flag "-fno-tree-fre" after the other optimization flags - the
-configure script should do this automatically.
+The library uses the standard `autotools` mechanism for configuration,
+compilation and installation. See the file `COMPILE` for configuration hints.

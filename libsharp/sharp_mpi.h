@@ -25,7 +25,7 @@
 /*! \file sharp_mpi.h
  *  Interface for the spherical transform library with MPI support.
  *
- *  Copyright (C) 2011,2012 Max-Planck-Society
+ *  Copyright (C) 2011-2019 Max-Planck-Society
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
@@ -33,28 +33,25 @@
 #define PLANCK_SHARP_MPI_H
 
 #include <mpi.h>
-#include "sharp_lowlevel.h"
+#include "sharp.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /*! Performs an MPI parallel libsharp SHT job. The interface deliberately does
-  not use the C99 "complex" data type, in order to be callable from C.
+  not use the C99 "complex" data type, in order to be callable from C89 and C++.
   \param comm the MPI communicator to be used for this SHT
   \param type the type of SHT
   \param spin the spin of the quantities to be transformed
   \param alm contains pointers to the a_lm coefficients. If \a spin==0,
-    alm[0] points to the a_lm of the first SHT, alm[1] to those of the second
-    etc. If \a spin>0, alm[0] and alm[1] point to the a_lm of the first SHT,
-    alm[2] and alm[3] to those of the second, etc. The exact data type of \a alm
+    alm[0] points to the a_lm of the SHT. If \a spin>0, alm[0] and alm[1]
+    point to the two a_lm sets of the SHT. The exact data type of \a alm
     depends on whether the SHARP_DP flag is set.
   \param map contains pointers to the maps. If \a spin==0,
-    map[0] points to the map of the first SHT, map[1] to that of the second
-    etc. If \a spin>0, or \a type is SHARP_ALM2MAP_DERIV1, map[0] and map[1]
-    point to the maps of the first SHT, map[2] and map[3] to those of the
-    second, etc. The exact data type of \a map depends on whether the SHARP_DP
-    flag is set.
+    map[0] points to the map of the SHT. If \a spin>0, or \a type is
+    SHARP_ALM2MAP_DERIV1, map[0] and map[1] point to the two maps of the SHT.
+    The exact data type of \a map depends on whether the SHARP_DP flag is set.
   \param geom_info A \c sharp_geom_info object compatible with the provided
     \a map arrays. The total map geometry is the union of all \a geom_info
     objects over the participating MPI tasks.
@@ -62,7 +59,6 @@ extern "C" {
     \a alm arrays. All \c m values from 0 to some \c mmax<=lmax must be present
     exactly once in the union of all \a alm_info objects over the participating
     MPI tasks.
-  \param ntrans the number of simultaneous SHTs
   \param flags See sharp_jobflags. In particular, if SHARP_DP is set, then
     \a alm is expected to have the type "complex double **" and \a map is
     expected to have the type "double **"; otherwise, the expected
@@ -73,7 +69,7 @@ extern "C" {
     operation count for this SHT will be written here. */
 void sharp_execute_mpi (MPI_Comm comm, sharp_jobtype type, int spin,
   void *alm, void *map, const sharp_geom_info *geom_info,
-  const sharp_alm_info *alm_info, int ntrans, int flags, double *time,
+  const sharp_alm_info *alm_info, int flags, double *time,
   unsigned long long *opcnt);
 
 #ifdef __cplusplus
