@@ -29,7 +29,7 @@ appropriate implementation is selected dynamically at runtime. This should
 provide a very significant performance boost for everyone using pre-compiled
 portable binaries.
 
-### Compilation
+## Compilation
 
 The library uses the standard `autotools` mechanism for configuration,
 compilation and installation. See the file `COMPILE` for configuration hints.
