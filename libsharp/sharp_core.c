@@ -18,7 +18,7 @@ static t_veclen veclen_ = NULL;
 static t_max_nvec max_nvec_ = NULL;
 static t_architecture architecture_ = NULL;
 
-#if defined(__GNUC__) && defined (__x86_64__) && (__GNUC__>=6)
+#ifdef MULTIARCH
 
 #define DECL(arch) \
 static int XCONCATX2(have,arch)(void) \
@@ -59,7 +59,7 @@ DECL(avx)
 
 static void assign_funcs(void)
   {
-#if defined(__GNUC__) && defined (__x86_64__) && (__GNUC__>=6)
+#ifdef MULTIARCH
 #define DECL2(arch) \
   if (XCONCATX2(have,arch)()) \
     { \
