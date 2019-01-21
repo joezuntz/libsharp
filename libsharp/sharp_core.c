@@ -1,9 +1,7 @@
-#define XCONCATX(a,b) a##_##b
-#define XCONCATX2(a,b) XCONCATX(a,b)
-#define XARCH(a) XCONCATX2(a,ARCH)
-
 #define ARCH default
+#define GENERIC_ARCH
 #include "sharp_core_inc.c"
+#undef GENERIC_ARCH
 #undef ARCH
 
 typedef void (*t_inner_loop) (sharp_job *job, const int *ispair,
