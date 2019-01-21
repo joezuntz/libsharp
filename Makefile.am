@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libsharp.la
 
-src_sharp = \
+libsharp_la_SOURCES = \
   c_utils/c_utils.c \
   c_utils/c_utils.h \
   pocketfft/pocketfft.c \
@@ -10,11 +10,6 @@ src_sharp = \
   libsharp/sharp.c \
   libsharp/sharp_almhelpers.c \
   libsharp/sharp_core.c \
-  libsharp/sharp_core_avx.c \
-  libsharp/sharp_core_avx2.c \
-  libsharp/sharp_core_fma.c \
-  libsharp/sharp_core_fma4.c \
-  libsharp/sharp_core_avx512f.c \
   libsharp/sharp_geomhelpers.c \
   libsharp/sharp_legendre_roots.c \
   libsharp/sharp_ylmgen_c.c \
@@ -23,6 +18,16 @@ src_sharp = \
   libsharp/sharp_vecsupport.h \
   libsharp/sharp_ylmgen_c.h
 
+libavx_la_SOURCES = libsharp/sharp_core_inc.c
+libavx2_la_SOURCES = libsharp/sharp_core_inc.c
+libfma_la_SOURCES = libsharp/sharp_core_inc.c
+libfma4_la_SOURCES = libsharp/sharp_core_inc.c
+libavx512f_la_SOURCES = libsharp/sharp_core_inc.c
+
+noinst_LTLIBRARIES = libavx.la libavx2.la libfma.la libfma4.la libavx512f.la
+
+libsharp_la_LIBADD = libavx.la libavx2.la libfma.la libfma4.la libavx512f.la
+
 include_HEADERS = \
   libsharp/sharp.h \
   libsharp/sharp_geomhelpers.h \
@@ -30,10 +35,7 @@ include_HEADERS = \
   libsharp/sharp_cxx.h
 
 EXTRA_DIST = \
-  libsharp/sharp_core_inc.c \
   runtest.sh
-
-libsharp_la_SOURCES = $(src_sharp)
 
 check_PROGRAMS = sharp_testsuite
 sharp_testsuite_SOURCES = libsharp/sharp_testsuite.c c_utils/memusage.c c_utils/memusage.h c_utils/walltime_c.c c_utils/walltime_c.h
@@ -42,6 +44,12 @@ sharp_testsuite_LDADD = libsharp.la
 TESTS = runtest.sh
 
 AM_CFLAGS = -I$(top_srcdir)/c_utils -I$(top_srcdir)/libsharp @AM_CFLAGS@
+
+libavx_la_CFLAGS = ${AM_CFLAGS} -mavx -DARCH=avx
+libavx2_la_CFLAGS = ${AM_CFLAGS} -mavx2 -DARCH=avx2
+libfma_la_CFLAGS = ${AM_CFLAGS} -mfma -DARCH=fma
+libfma4_la_CFLAGS = ${AM_CFLAGS} -mfma4 -DARCH=fma4
+libavx512f_la_CFLAGS = ${AM_CFLAGS} -mavx512f -DARCH=avx512f
 
 pkgconfigdir = $(libdir)/pkgconfig
 nodist_pkgconfig_DATA = @PACKAGE_NAME@.pc

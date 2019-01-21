@@ -28,14 +28,14 @@ to the C99 standard, you should still be able to compile libsharp with
 Runtime CPU selection with gcc
 ------------------------------
 
-When using a recent gcc (6.0 and newer) on an x86_64 platform, the build
-machinery will compile the time-critical functions for several different
-architectures (SSE2, AVX, AVX2, FMA3, FMA4, AVX512F), and the appropriate
-implementation will be selected at runtime.
-This only happens if you do _not_ explicitly specify a target architecture via
-the compiler flags. I.e., please do _not_ specify "-march=native" or
-"-mtarget=avx" or similar if you want a portable binary that will run
-efficiently on different x86_64 CPUs.
+When using a recent gcc (6.0 and newer) or a recent clang (successfully tested
+with versions 6 and 7) on an x86_64 platform, the build machinery can compile
+the time-critical functions for several different architectures (SSE2, AVX,
+AVX2, FMA3, FMA4, AVX512F), and the appropriate implementation will be selected
+at runtime.
+This is enabled by passing "-DMULTIARCH" as part of the CFLAGS.
+If this is enabled, please do _not_ specify "-march=native" or
+"-mtarget=avx" or similar!
 If you are compiling libsharp for a particular target CPU only, or if you are
 using a different compiler, however, "-march-native" should be used. The
 resulting binary will most likely not run on other computers, though.
@@ -65,16 +65,16 @@ Example configure invocations
 =============================
 
 GCC, OpenMP, portable binary:
-CFLAGS="-std=c99 -O3 -ffast-math -fopenmp" ./configure
+CFLAGS="-DMULTIARCH -std=c99 -O3 -ffast-math -fopenmp" ./configure
 
 GCC, no OpenMP, portable binary:
-CFLAGS="-std=c99 -O3 -ffast-math" ./configure
+CFLAGS="-DMULTIARCH -std=c99 -O3 -ffast-math" ./configure
 
-Clang, OpenMP, nonportable binary:
-CC=clang CFLAGS="-std=c99 -O3 -march=native -ffast-math -fopenmp" ./configure
+Clang, OpenMP, portable binary:
+CC=clang CFLAGS="-DMULTIARCH -std=c99 -O3 -ffast-math -fopenmp" ./configure
 
 Intel C compiler, OpenMP, nonportable binary:
-CC=icc CFLAGS="-std=c99 -O3 -march=native -ffast-math -fopenmp" ./configure
+CC=icc CFLAGS="-std=c99 -O3 -march=native -ffast-math -fopenmp -D__PURE_INTEL_C99_HEADERS__" ./configure
 
 MPI support, nonportable binary:
 CC=mpicc CFLAGS="-DUSE_MPI -std=c99 -O3 -march=native -ffast-math" ./configure

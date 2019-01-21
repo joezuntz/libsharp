@@ -18,7 +18,7 @@ personal communication).
 
 These improvements reduce the fraction of CPU time spent on evaluating the
 recurrences for Y_lm coefficients, which means that computing multiple
-simultaneous SHTs no longer have a big performance advantage compared to SHTs
+simultaneous SHTs no longer has a big performance advantage compared to SHTs
 done one after the other.
 As a consequence, libsharp support for simultaneous SHTs was dropped, making
 its interface much simpler.

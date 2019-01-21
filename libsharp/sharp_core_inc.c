@@ -29,6 +29,12 @@
  *  \author Martin Reinecke
  */
 
+#if (defined(MULTIARCH) || defined(GENERIC_ARCH))
+
+#define XCONCATX(a,b) a##_##b
+#define XCONCATX2(a,b) XCONCATX(a,b)
+#define XARCH(a) XCONCATX2(a,ARCH)
+
 #include <complex.h>
 #include <math.h>
 #include <string.h>
@@ -1179,3 +1185,5 @@ const char *XARCH(sharp_architecture)(void)
   {
   return xstr(ARCH);
   }
+
+#endif
