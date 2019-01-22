@@ -18,6 +18,8 @@ libsharp_la_SOURCES = \
   libsharp/sharp_vecsupport.h \
   libsharp/sharp_ylmgen_c.h
 
+if HAVE_MULTIARCH
+
 libavx_la_SOURCES = libsharp/sharp_core_inc.c
 libavx2_la_SOURCES = libsharp/sharp_core_inc.c
 libfma_la_SOURCES = libsharp/sharp_core_inc.c
@@ -26,7 +28,15 @@ libavx512f_la_SOURCES = libsharp/sharp_core_inc.c
 
 noinst_LTLIBRARIES = libavx.la libavx2.la libfma.la libfma4.la libavx512f.la
 
+libavx_la_CFLAGS = ${AM_CFLAGS} -mavx -DARCH=avx
+libavx2_la_CFLAGS = ${AM_CFLAGS} -mavx2 -DARCH=avx2
+libfma_la_CFLAGS = ${AM_CFLAGS} -mfma -DARCH=fma
+libfma4_la_CFLAGS = ${AM_CFLAGS} -mfma4 -DARCH=fma4
+libavx512f_la_CFLAGS = ${AM_CFLAGS} -mavx512f -DARCH=avx512f
+
 libsharp_la_LIBADD = libavx.la libavx2.la libfma.la libfma4.la libavx512f.la
+
+endif
 
 include_HEADERS = \
   libsharp/sharp.h \
@@ -44,12 +54,6 @@ sharp_testsuite_LDADD = libsharp.la
 TESTS = runtest.sh
 
 AM_CFLAGS = -I$(top_srcdir)/c_utils -I$(top_srcdir)/libsharp @AM_CFLAGS@
-
-libavx_la_CFLAGS = ${AM_CFLAGS} -mavx -DARCH=avx
-libavx2_la_CFLAGS = ${AM_CFLAGS} -mavx2 -DARCH=avx2
-libfma_la_CFLAGS = ${AM_CFLAGS} -mfma -DARCH=fma
-libfma4_la_CFLAGS = ${AM_CFLAGS} -mfma4 -DARCH=fma4
-libavx512f_la_CFLAGS = ${AM_CFLAGS} -mavx512f -DARCH=avx512f
 
 pkgconfigdir = $(libdir)/pkgconfig
 nodist_pkgconfig_DATA = @PACKAGE_NAME@.pc

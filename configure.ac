@@ -33,6 +33,9 @@ LIBS="-lm"
 
 AC_PROG_LIBTOOL
 
+tmpval=`echo $CFLAGS | grep -c '\-DMULTIARCH'`
+AM_CONDITIONAL([HAVE_MULTIARCH], [test $tmpval -gt 0])
+
 dnl
 dnl Create pkgconfig .pc file.
 dnl
