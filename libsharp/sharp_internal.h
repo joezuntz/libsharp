@@ -40,8 +40,6 @@
 #include "sharp.h"
 #include "sharp_ylmgen_c.h"
 
-#define SHARP_MAXTRANS 100
-
 typedef struct
   {
   sharp_jobtype type;
