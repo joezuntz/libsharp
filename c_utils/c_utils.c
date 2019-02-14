@@ -16,21 +16,17 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*
  *  Convenience functions
  *
- *  Copyright (C) 2008-2017 Max-Planck-Society
+ *  Copyright (C) 2008-2019 Max-Planck-Society
  *  Author: Martin Reinecke
  */
 
 #include <stdio.h>
-#include "c_utils.h"
+#include "c_utils/c_utils.h"
 
 void util_fail_ (const char *file, int line, const char *func, const char *msg)
   {

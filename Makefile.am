@@ -38,7 +38,7 @@ libsharp_la_LIBADD = libavx.la libavx2.la libfma.la libfma4.la libavx512f.la
 
 endif
 
-include_HEADERS = \
+nobase_include_HEADERS = \
   libsharp/sharp.h \
   libsharp/sharp_geomhelpers.h \
   libsharp/sharp_almhelpers.h \
@@ -53,7 +53,7 @@ sharp_testsuite_LDADD = libsharp.la
 
 TESTS = runtest.sh
 
-AM_CFLAGS = -I$(top_srcdir)/c_utils -I$(top_srcdir)/libsharp @AM_CFLAGS@
+AM_CFLAGS = @AM_CFLAGS@
 
 pkgconfigdir = $(libdir)/pkgconfig
 nodist_pkgconfig_DATA = @PACKAGE_NAME@.pc

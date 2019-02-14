@@ -16,11 +16,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libsharp is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*! \file sharp_mpi.h
  *  Interface for the spherical transform library with MPI support.
@@ -33,7 +29,7 @@
 #define PLANCK_SHARP_MPI_H
 
 #include <mpi.h>
-#include "sharp.h"
+#include "libsharp/sharp.h"
 
 #ifdef __cplusplus
 extern "C" {

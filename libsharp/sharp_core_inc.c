@@ -16,11 +16,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libsharp is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*! \file sharp_core_inc.c
  *  Computational core
@@ -28,6 +24,9 @@
  *  Copyright (C) 2012-2019 Max-Planck-Society
  *  \author Martin Reinecke
  */
+
+// FIXME: special ugly workaround for problems on OSX
+#if (!defined(__APPLE__)) || (!defined(__AVX512F__))
 
 #if (defined(MULTIARCH) || defined(GENERIC_ARCH))
 
@@ -38,10 +37,10 @@
 #include <complex.h>
 #include <math.h>
 #include <string.h>
-#include "sharp_vecsupport.h"
-#include "sharp.h"
-#include "sharp_internal.h"
-#include "c_utils.h"
+#include "libsharp/sharp_vecsupport.h"
+#include "libsharp/sharp.h"
+#include "libsharp/sharp_internal.h"
+#include "c_utils/c_utils.h"
 
 typedef complex double dcmplx;
 
@@ -1203,5 +1202,7 @@ const char *XARCH(sharp_architecture)(void)
   {
   return xstr(ARCH);
   }
+
+#endif
 
 #endif

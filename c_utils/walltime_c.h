@@ -16,16 +16,12 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*! \file walltime_c.h
  *  Functionality for reading wall clock time
  *
- *  Copyright (C) 2010 Max-Planck-Society
+ *  Copyright (C) 2010-2019 Max-Planck-Society
  *  \author Martin Reinecke
  */
 

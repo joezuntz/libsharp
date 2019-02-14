@@ -16,22 +16,18 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*
  *  Functionality for measuring memory consumption
  *
- *  Copyright (C) 2012 Max-Planck-Society
+ *  Copyright (C) 2012-2019 Max-Planck-Society
  *  Author: Martin Reinecke
  */
 
 #include <stdio.h>
 #include <string.h>
-#include "memusage.h"
+#include "c_utils/memusage.h"
 
 double residentSetSize(void)
   {
