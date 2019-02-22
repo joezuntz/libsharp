@@ -761,7 +761,7 @@ NOINLINE static void map2phase (sharp_job *job, int mmax, int llim, int ulim)
     }
   else
     {
-#pragma omp parallel if ((job->flags&SHARP_NO_OPENMP)==0)
+#pragma omp parallel
 {
     ringhelper helper;
     ringhelper_init(&helper);
@@ -806,7 +806,7 @@ NOINLINE static void phase2map (sharp_job *job, int mmax, int llim, int ulim)
     }
   else
     {
-#pragma omp parallel if ((job->flags&SHARP_NO_OPENMP)==0)
+#pragma omp parallel
 {
     ringhelper helper;
     ringhelper_init(&helper);
@@ -872,7 +872,7 @@ NOINLINE static void sharp_execute_job (sharp_job *job)
 /* map->phase where necessary */
     map2phase (job, mmax, llim, ulim);
 
-#pragma omp parallel if ((job->flags&SHARP_NO_OPENMP)==0)
+#pragma omp parallel
 {
     sharp_job ljob = *job;
     ljob.opcnt=0;

@@ -266,7 +266,7 @@ static void sharp_execute_job_mpi (sharp_job *job, MPI_Comm comm)
 
     map2alm_comm (job, &minfo);
 
-#pragma omp parallel if ((job->flags&SHARP_NO_OPENMP)==0)
+#pragma omp parallel
 {
     sharp_job ljob = *job;
     sharp_Ylmgen_C generator;
