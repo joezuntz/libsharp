@@ -77,7 +77,7 @@ typedef struct
   double phi0_;
   dcmplx *shiftarr;
   int s_shift;
-  rfft_plan plan;
+  pocketfft_plan_r plan;
   int length;
   int norot;
   } ringhelper;
@@ -90,7 +90,7 @@ static void ringhelper_init (ringhelper *self)
 
 static void ringhelper_destroy (ringhelper *self)
   {
-  if (self->plan) destroy_rfft_plan(self->plan);
+  if (self->plan) pocketfft_delete_plan_r(self->plan);
   DEALLOC(self->shiftarr);
   ringhelper_init(self);
   }
@@ -110,11 +110,11 @@ NOINLINE static void ringhelper_update (ringhelper *self, int nph, int mmax, dou
 //      double *tmp=(double *) self->shiftarr;
 //      sincos_multi (mmax+1, phi0, &tmp[1], &tmp[0], 2);
       }
-//  if (!self->plan) self->plan=make_rfft_plan(nph);
+//  if (!self->plan) self->plan=pocketfft_make_plan_r(nph);
   if (nph!=(int)self->length)
     {
-    if (self->plan) destroy_rfft_plan(self->plan);
-    self->plan=make_rfft_plan(nph);
+    if (self->plan) pocketfft_delete_plan_r(self->plan);
+    self->plan=pocketfft_make_plan_r(nph);
     self->length=nph;
     }
   }
@@ -331,7 +331,7 @@ NOINLINE static void ringhelper_phase2ring (ringhelper *self,
       }
     }
   data[1]=data[0];
-  rfft_backward (self->plan, &(data[1]), 1.);
+  pocketfft_backward_r (self->plan, &(data[1]), 1.);
   }
 
 NOINLINE static void ringhelper_ring2phase (ringhelper *self,
@@ -350,7 +350,7 @@ NOINLINE static void ringhelper_ring2phase (ringhelper *self,
   if (flags&SHARP_REAL_HARMONICS)
     wgt *= sqrt_two;
 
-  rfft_forward (self->plan, &(data[1]), 1.);
+  pocketfft_forward_r (self->plan, &(data[1]), 1.);
   data[0]=data[1];
   data[1]=data[nph+1]=0.;
 

@@ -7,8 +7,6 @@ libsharp_la_SOURCES = \
   c_utils/c_utils.h \
   c_utils/walltime_c.c \
   c_utils/walltime_c.h \
-  pocketfft/pocketfft.c \
-  pocketfft/pocketfft.h \
   libsharp/sharp.c \
   libsharp/sharp_almhelpers.c \
   libsharp/sharp_core.c \
@@ -51,11 +49,11 @@ EXTRA_DIST = \
 
 check_PROGRAMS = sharp_testsuite
 sharp_testsuite_SOURCES = libsharp/sharp_testsuite.c c_utils/memusage.c c_utils/memusage.h
-sharp_testsuite_LDADD = libsharp.la
+sharp_testsuite_LDADD = libsharp.la @POCKETFFT_LIBS@
 
 TESTS = runtest.sh
 
-AM_CFLAGS = @AM_CFLAGS@
+AM_CFLAGS = @AM_CFLAGS@ @POCKETFFT_CFLAGS@
 
 pkgconfigdir = $(libdir)/pkgconfig
 nodist_pkgconfig_DATA = @PACKAGE_NAME@.pc

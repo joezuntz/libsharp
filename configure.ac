@@ -22,10 +22,9 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_PROG_CC_C99
 
-# adding the lib to the files to link
-LIBS="-lm"
-
 AC_PROG_LIBTOOL
+
+PKG_CHECK_MODULES([POCKETFFT], [pocketfft], , [POCKETFFT_LIBS="-lpocketfft -lm"])
 
 tmpval=`echo $CFLAGS | grep -c '\-DMULTIARCH'`
 AM_CONDITIONAL([HAVE_MULTIARCH], [test $tmpval -gt 0])
@@ -39,6 +38,8 @@ AX_CREATE_PKGCONFIG_INFO(,,,,[])
 AC_SUBST([LIBS])
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_LDFLAGS])
+AC_SUBST([POCKETFFT_CFLAGS])
+AC_SUBST([POCKETFFT_LIBS])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
