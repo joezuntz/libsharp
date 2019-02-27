@@ -29,6 +29,8 @@ PKG_CHECK_MODULES([POCKETFFT], [pocketfft], , [POCKETFFT_LIBS="-lpocketfft -lm"]
 tmpval=`echo $CFLAGS | grep -c '\-DMULTIARCH'`
 AM_CONDITIONAL([HAVE_MULTIARCH], [test $tmpval -gt 0])
 
+
+LIBS=$POCKETFFT_LIBS
 PACKAGE_LIBS="-lsharp"
 
 dnl
