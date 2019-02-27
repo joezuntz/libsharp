@@ -42,6 +42,11 @@
 #include "libsharp/sharp_internal.h"
 #include "c_utils/c_utils.h"
 
+// In the following, we explicitly allow the compiler to contract floating
+// point operations, like multiply-and-add.
+// Unfortunately, most compilers don't act on this pragma yet.
+#pragma STDC FP_CONTRACT ON
+
 typedef complex double dcmplx;
 
 #define nv0 (128/VLEN)

@@ -15,7 +15,7 @@ flags.
 Fast math
 ---------
 
-Specifying "-ffast-math" is important for all compilers, since it allows the
+Specifying "-ffast-math" or "-ffp-contract=fast" is important for all compilers, since it allows the
 compiler to fuse multiplications and additions into FMA instructions, which is
 forbidden by the C99 standard. Since FMAs are a central aspect of the algorithm,
 they are needed for optimum performance.
@@ -25,8 +25,8 @@ to the C99 standard, you should still be able to compile libsharp with
 "-ffast-math" without any problems.
 
 
-Runtime CPU selection with gcc
-------------------------------
+Runtime CPU selection with gcc and clang
+----------------------------------------
 
 When using a recent gcc (6.0 and newer) or a recent clang (successfully tested
 with versions 6 and 7) on an x86_64 platform, the build machinery can compile
