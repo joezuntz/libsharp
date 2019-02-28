@@ -25,8 +25,8 @@
  *  \author Martin Reinecke
  */
 
-#ifndef PLANCK_MEMUSAGE_H
-#define PLANCK_MEMUSAGE_H
+#ifndef SHARP_MEMUSAGE_H
+#define SHARP_MEMUSAGE_H
 
 #ifdef __cplusplus
 extern "C" {

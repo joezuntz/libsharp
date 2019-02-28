@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <complex.h>
 #ifdef USE_MPI
 #include "mpi.h"
 #include "libsharp/sharp_mpi.h"
@@ -34,11 +35,10 @@
 #include <omp.h>
 #endif
 #include "libsharp/sharp.h"
-#include "libsharp/sharp_internal.h"
 #include "libsharp/sharp_geomhelpers.h"
 #include "libsharp/sharp_almhelpers.h"
-#include "c_utils/c_utils.h"
-#include "c_utils/memusage.h"
+#include "libsharp/sharp_utils.h"
+#include "test/memusage.h"
 
 static void OpenMP_status(void)
   {

@@ -30,8 +30,7 @@
 #include "pocketfft/pocketfft.h"
 #include "libsharp/sharp_ylmgen_c.h"
 #include "libsharp/sharp_internal.h"
-#include "c_utils/c_utils.h"
-#include "c_utils/walltime_c.h"
+#include "libsharp/sharp_utils.h"
 #include "libsharp/sharp_almhelpers.h"
 #include "libsharp/sharp_geomhelpers.h"
 
@@ -836,7 +835,7 @@ NOINLINE static void phase2map (sharp_job *job, int mmax, int llim, int ulim)
 
 NOINLINE static void sharp_execute_job (sharp_job *job)
   {
-  double timer=wallTime();
+  double timer=sharp_wallTime();
   job->opcnt=0;
   int lmax = job->ainfo->lmax,
       mmax=sharp_get_mmax(job->ainfo->mval, job->ainfo->nm);
@@ -910,7 +909,7 @@ NOINLINE static void sharp_execute_job (sharp_job *job)
 
   DEALLOC(job->norm_l);
   dealloc_phase (job);
-  job->time=wallTime()-timer;
+  job->time=sharp_wallTime()-timer;
   }
 
 static void sharp_build_job_common (sharp_job *job, sharp_jobtype type,

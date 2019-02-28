@@ -3,10 +3,8 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libsharp.la
 
 libsharp_la_SOURCES = \
-  c_utils/c_utils.c \
-  c_utils/c_utils.h \
-  c_utils/walltime_c.c \
-  c_utils/walltime_c.h \
+  libsharp/sharp_utils.c \
+  libsharp/sharp_utils.h \
   libsharp/sharp.c \
   libsharp/sharp_almhelpers.c \
   libsharp/sharp_core.c \
@@ -48,7 +46,7 @@ EXTRA_DIST = \
   runtest.sh
 
 check_PROGRAMS = sharp_testsuite
-sharp_testsuite_SOURCES = libsharp/sharp_testsuite.c c_utils/memusage.c c_utils/memusage.h
+sharp_testsuite_SOURCES = test/sharp_testsuite.c test/memusage.c test/memusage.h
 sharp_testsuite_LDADD = libsharp.la @POCKETFFT_LIBS@
 
 TESTS = runtest.sh

@@ -211,7 +211,7 @@ static void sharp_execute_job_mpi (sharp_job *job, MPI_Comm comm)
     { sharp_execute_job (job); return; }
 
   MPI_Barrier(comm);
-  double timer=wallTime();
+  double timer=sharp_wallTime();
   job->opcnt=0;
   sharp_mpi_info minfo;
   sharp_make_mpi_info(comm, job, &minfo);
@@ -306,7 +306,7 @@ static void sharp_execute_job_mpi (sharp_job *job, MPI_Comm comm)
     dealloc_phase (job);
     }
   sharp_destroy_mpi_info(&minfo);
-  job->time=wallTime()-timer;
+  job->time=sharp_wallTime()-timer;
   }
 
 void sharp_execute_mpi (MPI_Comm comm, sharp_jobtype type, int spin,

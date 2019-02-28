@@ -25,8 +25,8 @@
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
-#ifndef PLANCK_SHARP_H
-#define PLANCK_SHARP_H
+#ifndef SHARP_SHARP_H
+#define SHARP_SHARP_H
 
 #include <stddef.h>
 
@@ -252,6 +252,10 @@ int sharp_execute_mpi_maybe (void *pcomm, sharp_jobtype type, int spin,
   unsigned long long *opcnt);
 
 /*! \} */
+
+int sharp_get_mlim (int lmax, int spin, double sth, double cth);
+int sharp_veclen(void);
+const char *sharp_architecture(void);
 
 #ifdef __cplusplus
 }

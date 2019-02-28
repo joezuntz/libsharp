@@ -27,7 +27,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "c_utils/memusage.h"
+#include "test/memusage.h"
 
 double residentSetSize(void)
   {

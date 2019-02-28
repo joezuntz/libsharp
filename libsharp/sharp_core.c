@@ -105,6 +105,7 @@ DECL2(avx)
   architecture_ = sharp_architecture_default;
   }
 
+#pragma GCC visibility push(hidden)
 
 void inner_loop (sharp_job *job, const int *ispair,const double *cth,
   const double *sth, int llim, int ulim, sharp_Ylmgen_C *gen, int mi,
@@ -113,15 +114,19 @@ void inner_loop (sharp_job *job, const int *ispair,const double *cth,
   if (!inner_loop_) assign_funcs();
   inner_loop_(job, ispair, cth, sth, llim, ulim, gen, mi, mlim);
   }
-int sharp_veclen(void)
-  {
-  if (!veclen_) assign_funcs();
-  return veclen_();
-  }
+
 int sharp_max_nvec(int spin)
   {
   if (!max_nvec_) assign_funcs();
   return max_nvec_(spin);
+  }
+
+#pragma GCC visibility pop
+
+int sharp_veclen(void)
+  {
+  if (!veclen_) assign_funcs();
+  return veclen_();
   }
 const char *sharp_architecture(void)
   {

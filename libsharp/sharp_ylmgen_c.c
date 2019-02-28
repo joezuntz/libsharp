@@ -28,7 +28,9 @@
 #include <math.h>
 #include <stdlib.h>
 #include "libsharp/sharp_ylmgen_c.h"
-#include "c_utils/c_utils.h"
+#include "libsharp/sharp_utils.h"
+
+#pragma GCC visibility push(hidden)
 
 static inline void normalize (double *val, int *scale, double xfmax)
   {
@@ -252,3 +254,5 @@ double *sharp_Ylmgen_get_d1norm (int lmax)
     res[l] = (l<1) ? 0. : 0.5*sqrt(l*(l+1.)*(2*l+1.)/(4*pi));
   return res;
   }
+
+#pragma GCC visibility pop

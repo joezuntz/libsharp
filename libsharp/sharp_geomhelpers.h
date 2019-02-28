@@ -25,8 +25,8 @@
  *  \author Martin Reinecke
  */
 
-#ifndef PLANCK_SHARP_GEOMHELPERS_H
-#define PLANCK_SHARP_GEOMHELPERS_H
+#ifndef SHARP_GEOMHELPERS_H
+#define SHARP_GEOMHELPERS_H
 
 #include "libsharp/sharp.h"
 

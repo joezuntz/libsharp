@@ -26,8 +26,8 @@
  *  \note This file should only be included from .c files, NOT from .h files.
  */
 
-#ifndef PLANCK_C_UTILS_H
-#define PLANCK_C_UTILS_H
+#ifndef SHARP_UTILS_H
+#define SHARP_UTILS_H
 
 #include <math.h>
 #include <stdlib.h>
@@ -37,10 +37,9 @@
 extern "C" {
 #endif
 
-void util_fail_ (const char *file, int line, const char *func, const char *msg);
-void util_warn_ (const char *file, int line, const char *func, const char *msg);
-void *util_malloc_ (size_t sz);
-void util_free_ (void *ptr);
+void sharp_fail_ (const char *file, int line, const char *func, const char *msg);
+void *sharp_malloc_ (size_t sz);
+void sharp_free_ (void *ptr);
 
 #if defined (__GNUC__)
 #define UTIL_FUNC_NAME__ __func__
@@ -53,57 +52,38 @@ void util_free_ (void *ptr);
     source file name and line number of the call, as well as \a msg;
     then exit the program with an error status. */
 #define UTIL_ASSERT(cond,msg) \
-  if(!(cond)) util_fail_(__FILE__,__LINE__,UTIL_FUNC_NAME__,msg)
+  if(!(cond)) sharp_fail_(__FILE__,__LINE__,UTIL_FUNC_NAME__,msg)
 /*! \def UTIL_WARN(cond,msg)
     If \a cond is false, print an warning containing function name,
     source file name and line number of the call, as well as \a msg. */
-#define UTIL_WARN(cond,msg) \
-  if(!(cond)) util_warn_(__FILE__,__LINE__,UTIL_FUNC_NAME__,msg)
-/*! \def UTIL_FAIL(msg)
-    Print an error message containing function name,
-    source file name and line number of the call, as well as \a msg;
-    then exit the program with an error status. */
 #define UTIL_FAIL(msg) \
-  util_fail_(__FILE__,__LINE__,UTIL_FUNC_NAME__,msg)
+  sharp_fail_(__FILE__,__LINE__,UTIL_FUNC_NAME__,msg)
 
 /*! \def ALLOC(ptr,type,num)
     Allocate space for \a num objects of type \a type. Make sure that the
     allocation succeeded, else stop the program with an error. Return the
     resulting pointer in \a ptr. */
 #define ALLOC(ptr,type,num) \
-  do { (ptr)=(type *)util_malloc_((num)*sizeof(type)); } while (0)
+  do { (ptr)=(type *)sharp_malloc_((num)*sizeof(type)); } while (0)
 /*! \def RALLOC(type,num)
     Allocate space for \a num objects of type \a type. Make sure that the
     allocation succeeded, else stop the program with an error. Cast the
     resulting pointer to \a (type*). */
 #define RALLOC(type,num) \
-  ((type *)util_malloc_((num)*sizeof(type)))
+  ((type *)sharp_malloc_((num)*sizeof(type)))
 /*! \def DEALLOC(ptr)
     Deallocate \a ptr. It must have been allocated using \a ALLOC or
     \a RALLOC. */
 #define DEALLOC(ptr) \
-  do { util_free_(ptr); (ptr)=NULL; } while(0)
+  do { sharp_free_(ptr); (ptr)=NULL; } while(0)
 #define RESIZE(ptr,type,num) \
-  do { util_free_(ptr); ALLOC(ptr,type,num); } while(0)
-#define GROW(ptr,type,sz_old,sz_new) \
-  do { \
-    if ((sz_new)>(sz_old)) \
-      { RESIZE(ptr,type,2*(sz_new));sz_old=2*(sz_new); } \
-  } while(0)
+  do { sharp_free_(ptr); ALLOC(ptr,type,num); } while(0)
 /*! \def SET_ARRAY(ptr,i1,i2,val)
     Set the entries \a ptr[i1] ... \a ptr[i2-1] to \a val. */
 #define SET_ARRAY(ptr,i1,i2,val) \
   do { \
     ptrdiff_t cnt_; \
     for (cnt_=(i1);cnt_<(i2);++cnt_) (ptr)[cnt_]=(val); \
-    } while(0)
-/*! \def COPY_ARRAY(src,dest,i1,i2)
-    Copy the entries \a src[i1] ... \a src[i2-1] to
-    \a dest[i1] ... \a dest[i2-1]. */
-#define COPY_ARRAY(src,dest,i1,i2) \
-  do { \
-    ptrdiff_t cnt_; \
-    for (cnt_=(i1);cnt_<(i2);++cnt_) (dest)[cnt_]=(src)[cnt_]; \
     } while(0)
 
 #define ALLOC2D(ptr,type,num1,num2) \
@@ -119,8 +99,6 @@ void util_free_ (void *ptr);
 
 #define FAPPROX(a,b,eps) \
   (fabs((a)-(b))<((eps)*fabs(b)))
-#define ABSAPPROX(a,b,eps) \
-  (fabs((a)-(b))<(eps))
 #define IMAX(a,b) \
   (((a)>(b)) ? (a) : (b))
 #define IMIN(a,b) \
@@ -129,12 +107,16 @@ void util_free_ (void *ptr);
 #define SWAP(a,b,type) \
   do { type tmp_=(a); (a)=(b); (b)=tmp_; } while(0)
 
-#define CHECK_STACK_ALIGN(align) \
-  do { \
-    double foo; \
-    UTIL_WARN((((size_t)(&foo))&(align-1))==0, \
-      "WARNING: stack not sufficiently aligned!"); \
-    } while(0)
+/*! Returns an approximation of the current wall time (in seconds).
+    The first available of the following timers will be used:
+    <ul>
+    <li> \a omp_get_wtime(), if OpenMP is available
+    <li> \a MPI_Wtime(), if MPI is available
+    <li> \a gettimeofday() otherwise
+    </ul>
+    \note Only useful for measuring time differences.
+    \note This function has an execution time between 10 and 100 nanoseconds. */
+double sharp_wallTime(void);
 
 #ifdef __cplusplus
 }

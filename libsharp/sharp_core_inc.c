@@ -40,7 +40,9 @@
 #include "libsharp/sharp_vecsupport.h"
 #include "libsharp/sharp.h"
 #include "libsharp/sharp_internal.h"
-#include "c_utils/c_utils.h"
+#include "libsharp/sharp_utils.h"
+
+#pragma GCC visibility push(hidden)
 
 // In the following, we explicitly allow the compiler to contract floating
 // point operations, like multiply-and-add.
@@ -1207,6 +1209,8 @@ const char *XARCH(sharp_architecture)(void)
   {
   return xstr(ARCH);
   }
+
+#pragma GCC visibility pop
 
 #endif
 

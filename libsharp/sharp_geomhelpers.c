@@ -28,7 +28,7 @@
 #include <math.h>
 #include "libsharp/sharp_geomhelpers.h"
 #include "libsharp/sharp_legendre_roots.h"
-#include "c_utils/c_utils.h"
+#include "libsharp/sharp_utils.h"
 #include "pocketfft/pocketfft.h"
 
 void sharp_make_subset_healpix_geom_info (int nside, int stride, int nrings,

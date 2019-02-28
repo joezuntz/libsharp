@@ -25,8 +25,8 @@
  *  \author Martin Reinecke
  */
 
-#ifndef PLANCK_SHARP_ALMHELPERS_H
-#define PLANCK_SHARP_ALMHELPERS_H
+#ifndef SHARP_ALMHELPERS_H
+#define SHARP_ALMHELPERS_H
 
 #include "libsharp/sharp.h"
 

@@ -25,8 +25,8 @@
  *  \author Martin Reinecke
  */
 
-#ifndef PLANCK_SHARP_CXX_H
-#define PLANCK_SHARP_CXX_H
+#ifndef SHARP_CXX_H
+#define SHARP_CXX_H
 
 #include <complex>
 #include "libsharp/sharp.h"

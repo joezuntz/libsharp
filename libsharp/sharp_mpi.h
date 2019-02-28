@@ -25,8 +25,8 @@
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
-#ifndef PLANCK_SHARP_MPI_H
-#define PLANCK_SHARP_MPI_H
+#ifndef SHARP_MPI_H
+#define SHARP_MPI_H
 
 #include <mpi.h>
 #include "libsharp/sharp.h"
