@@ -16,6 +16,8 @@ libsharp_la_SOURCES = \
   libsharp/sharp_vecsupport.h \
   libsharp/sharp_ylmgen_c.h
 
+AM_CFLAGS = @AM_CFLAGS@
+
 if HAVE_MULTIARCH
 
 libavx_la_SOURCES = libsharp/sharp_core_inc.c
@@ -50,8 +52,6 @@ sharp_testsuite_SOURCES = test/sharp_testsuite.c test/memusage.c test/memusage.h
 sharp_testsuite_LDADD = libsharp.la @POCKETFFT_LIBS@
 
 TESTS = runtest.sh
-
-AM_CFLAGS = @AM_CFLAGS@ @POCKETFFT_CFLAGS@
 
 pkgconfigdir = $(libdir)/pkgconfig
 nodist_pkgconfig_DATA = @PACKAGE_NAME@.pc
