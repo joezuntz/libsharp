@@ -16,6 +16,14 @@ libsharp_la_SOURCES = \
   libsharp/sharp_vecsupport.h \
   libsharp/sharp_ylmgen_c.h
 
+# format is "current:revision:age"
+# any change: increase revision
+# any interface change: increase current, revision=0
+# any backward-compatible change: increase age
+# any backward-incompatible change: age=0
+# ==> age <= current
+libsharp_la_LDFLAGS = -version-info 0:0:0
+
 AM_CFLAGS = @AM_CFLAGS@
 
 if HAVE_MULTIARCH
