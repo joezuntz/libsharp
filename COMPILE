@@ -15,10 +15,10 @@ flags.
 Fast math
 ---------
 
-Specifying "-ffast-math" or "-ffp-contract=fast" is important for all compilers, since it allows the
-compiler to fuse multiplications and additions into FMA instructions, which is
-forbidden by the C99 standard. Since FMAs are a central aspect of the algorithm,
-they are needed for optimum performance.
+Specifying "-ffast-math" or "-ffp-contract=fast" is important for all compilers,
+since it allows the compiler to fuse multiplications and additions into FMA
+instructions, which is forbidden by the C99 standard. Since FMAs are a central
+aspect of the algorithm, they are needed for optimum performance.
 
 If you are calling libsharp from other code which requires strict adherence
 to the C99 standard, you should still be able to compile libsharp with
