@@ -3,6 +3,8 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libsharp.la
 
 libsharp_la_SOURCES = \
+  pocketfft/pocketfft.c \
+  pocketfft/pocketfft.h \
   libsharp/sharp_utils.c \
   libsharp/sharp_utils.h \
   libsharp/sharp.c \
@@ -57,7 +59,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = sharp_testsuite
 sharp_testsuite_SOURCES = test/sharp_testsuite.c test/memusage.c test/memusage.h
-sharp_testsuite_LDADD = libsharp.la @POCKETFFT_LIBS@
+sharp_testsuite_LDADD = libsharp.la -lm
 
 TESTS = runtest.sh
 
