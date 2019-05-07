@@ -55,7 +55,7 @@ nobase_include_HEADERS = \
   libsharp/sharp_cxx.h
 
 EXTRA_DIST = \
-  runtest.sh
+  runtest.sh fortran/sharp.f90 fortran/test_sharp.f90
 
 check_PROGRAMS = sharp_testsuite
 sharp_testsuite_SOURCES = test/sharp_testsuite.c test/memusage.c test/memusage.h
