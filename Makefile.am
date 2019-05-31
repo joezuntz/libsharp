@@ -50,12 +50,13 @@ endif
 
 nobase_include_HEADERS = \
   libsharp/sharp.h \
+  libsharp/sharp_mpi.h \
   libsharp/sharp_geomhelpers.h \
   libsharp/sharp_almhelpers.h \
   libsharp/sharp_cxx.h
 
 EXTRA_DIST = \
-  runtest.sh fortran/sharp.f90 fortran/test_sharp.f90
+  runtest.sh fortran/sharp.f90 fortran/test_sharp.f90 libsharp/sharp_mpi.c
 
 check_PROGRAMS = sharp_testsuite
 sharp_testsuite_SOURCES = test/sharp_testsuite.c test/memusage.c test/memusage.h
