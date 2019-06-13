@@ -37,20 +37,14 @@ include_dirs = ['../',
 python_module_link_args = []
 
 if sys.platform == 'darwin':
-    extra_cc_compile_args.append('--std=c++11')
-    extra_cc_compile_args.append('--stdlib=libc++')
-    extra_cc_compile_args.append('-mmacosx-version-min=10.9')
-
+    extra_cc_compile_args += ['--std=c++11', '--stdlib=libc++',
+                              '-mmacosx-version-min=10.9']
     vars = distutils.sysconfig.get_config_vars()
     vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '')
-    python_module_link_args.append('-bundle')
-    builder = setuptools.command.build_ext.build_ext(Distribution())
-    full_name = builder.get_ext_filename('libsharp')
+    python_module_link_args += ['-bundle']
 else:
-    extra_cc_compile_args += ['-fopenmp', '-march=native', '-O3', '-ffast-math']
-    python_module_link_args += ['-fopenmp', '-march=native']
-    extra_cc_compile_args.append('--std=c++11')
-    python_module_link_args.append("-Wl,-rpath,$ORIGIN")
+    extra_cc_compile_args += ['--std=c++11']
+    python_module_link_args += ["-Wl,-rpath,$ORIGIN"]
 
 
 def get_extension_modules():
