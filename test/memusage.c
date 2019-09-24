@@ -16,22 +16,18 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*
  *  Functionality for measuring memory consumption
  *
- *  Copyright (C) 2012 Max-Planck-Society
+ *  Copyright (C) 2012-2019 Max-Planck-Society
  *  Author: Martin Reinecke
  */
 
 #include <stdio.h>
 #include <string.h>
-#include "memusage.h"
+#include "test/memusage.h"
 
 double residentSetSize(void)
   {
@@ -57,7 +53,7 @@ double VmHWM(void)
     if (!strncmp(word, "VmHWM:", 6))
       {
       if (fscanf(f,"%lf%2s",&res,word)<0)
-	{ fclose(f); return -1.0; }
+        { fclose(f); return -1.0; }
       if (strncmp(word, "kB", 2))
         { fclose(f); return -1.0; }
       res *=1024;

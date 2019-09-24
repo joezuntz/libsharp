@@ -16,11 +16,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libsharp is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*! \file sharp_mpi.c
  *  Functionality only needed for MPI-parallel transforms
@@ -31,7 +27,7 @@
 
 #ifdef USE_MPI
 
-#include "sharp_mpi.h"
+#include "libsharp/sharp_mpi.h"
 
 typedef struct
   {
@@ -215,7 +211,7 @@ static void sharp_execute_job_mpi (sharp_job *job, MPI_Comm comm)
     { sharp_execute_job (job); return; }
 
   MPI_Barrier(comm);
-  double timer=wallTime();
+  double timer=sharp_wallTime();
   job->opcnt=0;
   sharp_mpi_info minfo;
   sharp_make_mpi_info(comm, job, &minfo);
@@ -270,7 +266,7 @@ static void sharp_execute_job_mpi (sharp_job *job, MPI_Comm comm)
 
     map2alm_comm (job, &minfo);
 
-#pragma omp parallel if ((job->flags&SHARP_NO_OPENMP)==0)
+#pragma omp parallel
 {
     sharp_job ljob = *job;
     sharp_Ylmgen_C generator;
@@ -310,7 +306,7 @@ static void sharp_execute_job_mpi (sharp_job *job, MPI_Comm comm)
     dealloc_phase (job);
     }
   sharp_destroy_mpi_info(&minfo);
-  job->time=wallTime()-timer;
+  job->time=sharp_wallTime()-timer;
   }
 
 void sharp_execute_mpi (MPI_Comm comm, sharp_jobtype type, int spin,

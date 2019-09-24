@@ -6,7 +6,7 @@
 /*! \file pocketfft.h
  *  Public interface of the pocketfft library
  *
- *  Copyright (C) 2008-2018 Max-Planck-Society
+ *  Copyright (C) 2008-2019 Max-Planck-Society
  *  \author Martin Reinecke
  */
 
@@ -15,20 +15,36 @@
 
 #include <stdlib.h>
 
-struct cfft_plan_i;
-typedef struct cfft_plan_i * cfft_plan;
-cfft_plan make_cfft_plan (size_t length);
-void destroy_cfft_plan (cfft_plan plan);
-int cfft_backward(cfft_plan plan, double c[], double fct);
-int cfft_forward(cfft_plan plan, double c[], double fct);
-size_t cfft_length(cfft_plan plan);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-struct rfft_plan_i;
-typedef struct rfft_plan_i * rfft_plan;
-rfft_plan make_rfft_plan (size_t length);
-void destroy_rfft_plan (rfft_plan plan);
-int rfft_backward(rfft_plan plan, double c[], double fct);
-int rfft_forward(rfft_plan plan, double c[], double fct);
-size_t rfft_length(rfft_plan plan);
+struct pocketfft_plan_c_i;
+typedef struct pocketfft_plan_c_i * pocketfft_plan_c;
+pocketfft_plan_c pocketfft_make_plan_c (size_t length);
+void pocketfft_delete_plan_c (pocketfft_plan_c plan);
+int pocketfft_backward_c(pocketfft_plan_c plan, double c[], double fct);
+int pocketfft_forward_c(pocketfft_plan_c plan, double c[], double fct);
+size_t pocketfft_length_c(pocketfft_plan_c plan);
+
+struct pocketfft_plan_r_i;
+typedef struct pocketfft_plan_r_i * pocketfft_plan_r;
+pocketfft_plan_r pocketfft_make_plan_r (size_t length);
+void pocketfft_delete_plan_r (pocketfft_plan_r plan);
+/*! Computes a real backward FFT on \a c, using \a plan
+    and assuming the FFTPACK storage scheme:
+    - on entry, \a c has the form <tt>r0, r1, i1, r2, i2, ...</tt>
+    - on exit, it has the form <tt>r0, r1, ..., r[length-1]</tt>. */
+int pocketfft_backward_r(pocketfft_plan_r plan, double c[], double fct);
+/*! Computes a real forward FFT on \a c, using \a plan
+    and assuming the FFTPACK storage scheme:
+    - on entry, \a c has the form <tt>r0, r1, ..., r[length-1]</tt>;
+    - on exit, it has the form <tt>r0, r1, i1, r2, i2, ...</tt> */
+int pocketfft_forward_r(pocketfft_plan_r plan, double c[], double fct);
+size_t pocketfft_length_r(pocketfft_plan_r plan);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -16,11 +16,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libsharp is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*! \file sharp_internal.h
  *  Internally used functionality for the spherical transform library.
@@ -29,16 +25,16 @@
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
-#ifndef PLANCK_SHARP_INTERNAL_H
-#define PLANCK_SHARP_INTERNAL_H
+#ifndef SHARP_INTERNAL_H
+#define SHARP_INTERNAL_H
 
 #ifdef __cplusplus
 #error This header file cannot be included from C++, only from C
 #endif
 
 #include <complex.h>
-#include "sharp.h"
-#include "sharp_ylmgen_c.h"
+#include "libsharp/sharp.h"
+#include "libsharp/sharp_ylmgen_c.h"
 
 typedef struct
   {
@@ -58,14 +54,10 @@ typedef struct
   unsigned long long opcnt;
   } sharp_job;
 
-int sharp_get_mlim (int lmax, int spin, double sth, double cth);
-
 void inner_loop (sharp_job *job, const int *ispair,const double *cth,
   const double *sth, int llim, int ulim, sharp_Ylmgen_C *gen, int mi,
   const int *mlim);
 
-int sharp_veclen(void);
 int sharp_max_nvec(int spin);
-const char *sharp_architecture(void);
 
 #endif

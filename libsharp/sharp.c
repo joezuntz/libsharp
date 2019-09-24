@@ -16,28 +16,23 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libsharp is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*! \file sharp.c
  *  Spherical transform library
  *
- *  Copyright (C) 2006-2016 Max-Planck-Society
+ *  Copyright (C) 2006-2019 Max-Planck-Society
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
 #include <math.h>
 #include <string.h>
 #include "pocketfft/pocketfft.h"
-#include "sharp_ylmgen_c.h"
-#include "sharp_internal.h"
-#include "c_utils.h"
-#include "walltime_c.h"
-#include "sharp_almhelpers.h"
-#include "sharp_geomhelpers.h"
+#include "libsharp/sharp_ylmgen_c.h"
+#include "libsharp/sharp_internal.h"
+#include "libsharp/sharp_utils.h"
+#include "libsharp/sharp_almhelpers.h"
+#include "libsharp/sharp_geomhelpers.h"
 
 typedef complex double dcmplx;
 typedef complex float  fcmplx;
@@ -81,7 +76,7 @@ typedef struct
   double phi0_;
   dcmplx *shiftarr;
   int s_shift;
-  rfft_plan plan;
+  pocketfft_plan_r plan;
   int length;
   int norot;
   } ringhelper;
@@ -94,7 +89,7 @@ static void ringhelper_init (ringhelper *self)
 
 static void ringhelper_destroy (ringhelper *self)
   {
-  if (self->plan) destroy_rfft_plan(self->plan);
+  if (self->plan) pocketfft_delete_plan_r(self->plan);
   DEALLOC(self->shiftarr);
   ringhelper_init(self);
   }
@@ -114,11 +109,11 @@ NOINLINE static void ringhelper_update (ringhelper *self, int nph, int mmax, dou
 //      double *tmp=(double *) self->shiftarr;
 //      sincos_multi (mmax+1, phi0, &tmp[1], &tmp[0], 2);
       }
-//  if (!self->plan) self->plan=make_rfft_plan(nph);
+//  if (!self->plan) self->plan=pocketfft_make_plan_r(nph);
   if (nph!=(int)self->length)
     {
-    if (self->plan) destroy_rfft_plan(self->plan);
-    self->plan=make_rfft_plan(nph);
+    if (self->plan) pocketfft_delete_plan_r(self->plan);
+    self->plan=pocketfft_make_plan_r(nph);
     self->length=nph;
     }
   }
@@ -335,7 +330,7 @@ NOINLINE static void ringhelper_phase2ring (ringhelper *self,
       }
     }
   data[1]=data[0];
-  rfft_backward (self->plan, &(data[1]), 1.);
+  pocketfft_backward_r (self->plan, &(data[1]), 1.);
   }
 
 NOINLINE static void ringhelper_ring2phase (ringhelper *self,
@@ -354,7 +349,7 @@ NOINLINE static void ringhelper_ring2phase (ringhelper *self,
   if (flags&SHARP_REAL_HARMONICS)
     wgt *= sqrt_two;
 
-  rfft_forward (self->plan, &(data[1]), 1.);
+  pocketfft_forward_r (self->plan, &(data[1]), 1.);
   data[0]=data[1];
   data[1]=data[nph+1]=0.;
 
@@ -765,7 +760,7 @@ NOINLINE static void map2phase (sharp_job *job, int mmax, int llim, int ulim)
     }
   else
     {
-#pragma omp parallel if ((job->flags&SHARP_NO_OPENMP)==0)
+#pragma omp parallel
 {
     ringhelper helper;
     ringhelper_init(&helper);
@@ -810,7 +805,7 @@ NOINLINE static void phase2map (sharp_job *job, int mmax, int llim, int ulim)
     }
   else
     {
-#pragma omp parallel if ((job->flags&SHARP_NO_OPENMP)==0)
+#pragma omp parallel
 {
     ringhelper helper;
     ringhelper_init(&helper);
@@ -840,7 +835,7 @@ NOINLINE static void phase2map (sharp_job *job, int mmax, int llim, int ulim)
 
 NOINLINE static void sharp_execute_job (sharp_job *job)
   {
-  double timer=wallTime();
+  double timer=sharp_wallTime();
   job->opcnt=0;
   int lmax = job->ainfo->lmax,
       mmax=sharp_get_mmax(job->ainfo->mval, job->ainfo->nm);
@@ -876,7 +871,7 @@ NOINLINE static void sharp_execute_job (sharp_job *job)
 /* map->phase where necessary */
     map2phase (job, mmax, llim, ulim);
 
-#pragma omp parallel if ((job->flags&SHARP_NO_OPENMP)==0)
+#pragma omp parallel
 {
     sharp_job ljob = *job;
     ljob.opcnt=0;
@@ -914,7 +909,7 @@ NOINLINE static void sharp_execute_job (sharp_job *job)
 
   DEALLOC(job->norm_l);
   dealloc_phase (job);
-  job->time=wallTime()-timer;
+  job->time=sharp_wallTime()-timer;
   }
 
 static void sharp_build_job_common (sharp_job *job, sharp_jobtype type,

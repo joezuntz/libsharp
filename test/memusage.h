@@ -16,36 +16,29 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik */
 
-/*! \file walltime_c.h
- *  Functionality for reading wall clock time
+/*! \file memusage.h
+ *  Functionality for measuring memory consumption
  *
- *  Copyright (C) 2010 Max-Planck-Society
+ *  Copyright (C) 2012-2019 Max-Planck-Society
  *  \author Martin Reinecke
  */
 
-#ifndef PLANCK_WALLTIME_C_H
-#define PLANCK_WALLTIME_C_H
+#ifndef SHARP_MEMUSAGE_H
+#define SHARP_MEMUSAGE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*! Returns an approximation of the current wall time (in seconds).
-    The first available of the following timers will be used:
-    <ul>
-    <li> \a omp_get_wtime(), if OpenMP is available
-    <li> \a MPI_Wtime(), if MPI is available
-    <li> \a gettimeofday() otherwise
-    </ul>
-    \note Only useful for measuring time differences.
-    \note This function has an execution time between 10 and 100 nanoseconds. */
-double wallTime(void);
+/*! Returns the current resident set size in bytes.
+    \note Currently only supported on Linux. Returns -1 if unsupported. */
+double residentSetSize(void);
+
+/*! Returns the high water mark of the resident set size in bytes.
+    \note Currently only supported on Linux. Returns -1 if unsupported. */
+double VmHWM(void);
 
 #ifdef __cplusplus
 }

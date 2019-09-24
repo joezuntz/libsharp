@@ -15,34 +15,29 @@ LT_INIT
 AC_CONFIG_MACRO_DIR([m4])
 
 dnl
-dnl By default, install the headers into a subdirectory of
-dnl ${prefix}/include to avoid possible header filename collisions.
-dnl
-includedir="${includedir}/${PACKAGE_NAME}"
-
-dnl
 dnl Enable silent build rules if this version of Automake supports them
 dnl
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 
 AC_PROG_CC_C99
-
-# adding the lib to the files to link
-LIBS="-lm"
-
+AC_OPENMP
 AC_PROG_LIBTOOL
 
 tmpval=`echo $CFLAGS | grep -c '\-DMULTIARCH'`
 AM_CONDITIONAL([HAVE_MULTIARCH], [test $tmpval -gt 0])
 
+AM_CFLAGS="$AM_CFLAGS $OPENMP_CFLAGS"
+
+PACKAGE_LIBS="-lsharp"
+PACKAGE_CFLAGS="$PACKAGE_CFLAGS $OPENMP_CFLAGS"
+PACKAGE_LDFLAGS="$PACKAGE_LDFLAGS $OPENMP_CFLAGS"
+
 dnl
 dnl Create pkgconfig .pc file.
 dnl
 AX_CREATE_PKGCONFIG_INFO(,,,,[])
-AC_SUBST([LIBS])
 AC_SUBST([AM_CFLAGS])
-AC_SUBST([AM_LDFLAGS])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

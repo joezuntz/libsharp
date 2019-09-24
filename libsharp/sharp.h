@@ -16,11 +16,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libsharp is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*! \file sharp.h
  *  Portable interface for the spherical transform library.
@@ -29,8 +25,8 @@
  *  \author Martin Reinecke \author Dag Sverre Seljebotn
  */
 
-#ifndef PLANCK_SHARP_H
-#define PLANCK_SHARP_H
+#ifndef SHARP_SHARP_H
+#define SHARP_SHARP_H
 
 #include <stddef.h>
 
@@ -199,7 +195,6 @@ typedef enum { SHARP_DP              = 1<<4,
                SHARP_NO_FFT          = 1<<7,
 
                SHARP_USE_WEIGHTS     = 1<<20,    /* internal use only */
-               SHARP_NO_OPENMP       = 1<<21,    /* internal use only */
              } sharp_jobflags;
 
 /*! Performs a libsharp SHT job. The interface deliberately does not use
@@ -257,6 +252,10 @@ int sharp_execute_mpi_maybe (void *pcomm, sharp_jobtype type, int spin,
   unsigned long long *opcnt);
 
 /*! \} */
+
+int sharp_get_mlim (int lmax, int spin, double sth, double cth);
+int sharp_veclen(void);
+const char *sharp_architecture(void);
 
 #ifdef __cplusplus
 }

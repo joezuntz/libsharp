@@ -16,11 +16,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libsharp is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*
  *  Helper code for efficient calculation of Y_lm(theta,phi=0)
@@ -31,8 +27,10 @@
 
 #include <math.h>
 #include <stdlib.h>
-#include "sharp_ylmgen_c.h"
-#include "c_utils.h"
+#include "libsharp/sharp_ylmgen_c.h"
+#include "libsharp/sharp_utils.h"
+
+#pragma GCC visibility push(hidden)
 
 static inline void normalize (double *val, int *scale, double xfmax)
   {
@@ -256,3 +254,5 @@ double *sharp_Ylmgen_get_d1norm (int lmax)
     res[l] = (l<1) ? 0. : 0.5*sqrt(l*(l+1.)*(2*l+1.)/(4*pi));
   return res;
   }
+
+#pragma GCC visibility pop

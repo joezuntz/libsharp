@@ -3,10 +3,10 @@ ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libsharp.la
 
 libsharp_la_SOURCES = \
-  c_utils/c_utils.c \
-  c_utils/c_utils.h \
   pocketfft/pocketfft.c \
   pocketfft/pocketfft.h \
+  libsharp/sharp_utils.c \
+  libsharp/sharp_utils.h \
   libsharp/sharp.c \
   libsharp/sharp_almhelpers.c \
   libsharp/sharp_core.c \
@@ -17,6 +17,16 @@ libsharp_la_SOURCES = \
   libsharp/sharp_legendre_roots.h \
   libsharp/sharp_vecsupport.h \
   libsharp/sharp_ylmgen_c.h
+
+# format is "current:revision:age"
+# any change: increase revision
+# any interface change: increase current, revision=0
+# any backward-compatible change: increase age
+# any backward-incompatible change: age=0
+# ==> age <= current
+libsharp_la_LDFLAGS = -version-info 0:0:0
+
+AM_CFLAGS = @AM_CFLAGS@
 
 if HAVE_MULTIARCH
 
@@ -38,22 +48,21 @@ libsharp_la_LIBADD = libavx.la libavx2.la libfma.la libfma4.la libavx512f.la
 
 endif
 
-include_HEADERS = \
+nobase_include_HEADERS = \
   libsharp/sharp.h \
+  libsharp/sharp_mpi.h \
   libsharp/sharp_geomhelpers.h \
   libsharp/sharp_almhelpers.h \
   libsharp/sharp_cxx.h
 
 EXTRA_DIST = \
-  runtest.sh
+  runtest.sh fortran/sharp.f90 fortran/test_sharp.f90 libsharp/sharp_mpi.c
 
 check_PROGRAMS = sharp_testsuite
-sharp_testsuite_SOURCES = libsharp/sharp_testsuite.c c_utils/memusage.c c_utils/memusage.h c_utils/walltime_c.c c_utils/walltime_c.h
-sharp_testsuite_LDADD = libsharp.la
+sharp_testsuite_SOURCES = test/sharp_testsuite.c test/memusage.c test/memusage.h
+sharp_testsuite_LDADD = libsharp.la -lm
 
 TESTS = runtest.sh
-
-AM_CFLAGS = -I$(top_srcdir)/c_utils -I$(top_srcdir)/libsharp @AM_CFLAGS@
 
 pkgconfigdir = $(libdir)/pkgconfig
 nodist_pkgconfig_DATA = @PACKAGE_NAME@.pc

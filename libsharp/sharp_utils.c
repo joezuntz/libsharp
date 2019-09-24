@@ -1,45 +1,37 @@
 /*
- *  This file is part of libc_utils.
+ *  This file is part of libsharp.
  *
- *  libc_utils is free software; you can redistribute it and/or modify
+ *  libsharp is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
  *
- *  libc_utils is distributed in the hope that it will be useful,
+ *  libsharp is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with libc_utils; if not, write to the Free Software
+ *  along with libsharp; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libc_utils is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*
  *  Convenience functions
  *
- *  Copyright (C) 2008-2017 Max-Planck-Society
+ *  Copyright (C) 2008-2019 Max-Planck-Society
  *  Author: Martin Reinecke
  */
 
 #include <stdio.h>
-#include "c_utils.h"
+#include "libsharp/sharp_utils.h"
 
-void util_fail_ (const char *file, int line, const char *func, const char *msg)
+void sharp_fail_ (const char *file, int line, const char *func, const char *msg)
   {
   fprintf(stderr,"%s, %i (%s):\n%s\n",file,line,func,msg);
   exit(1);
-  }
-void util_warn_ (const char *file, int line, const char *func, const char *msg)
-  {
-  fprintf(stderr,"%s, %i (%s):\n%s\n",file,line,func,msg);
   }
 
 /* This function tries to avoid allocations with a total size close to a high
@@ -57,7 +49,7 @@ static size_t manipsize(size_t sz)
 
 #ifdef __SSE__
 #include <xmmintrin.h>
-void *util_malloc_ (size_t sz)
+void *sharp_malloc_ (size_t sz)
   {
   void *res;
   if (sz==0) return NULL;
@@ -65,10 +57,10 @@ void *util_malloc_ (size_t sz)
   UTIL_ASSERT(res,"_mm_malloc() failed");
   return res;
   }
-void util_free_ (void *ptr)
+void sharp_free_ (void *ptr)
   { if ((ptr)!=NULL) _mm_free(ptr); }
 #else
-void *util_malloc_ (size_t sz)
+void *sharp_malloc_ (size_t sz)
   {
   void *res;
   if (sz==0) return NULL;
@@ -76,6 +68,41 @@ void *util_malloc_ (size_t sz)
   UTIL_ASSERT(res,"malloc() failed");
   return res;
   }
-void util_free_ (void *ptr)
+void sharp_free_ (void *ptr)
   { if ((ptr)!=NULL) free(ptr); }
 #endif
+
+#if defined (_OPENMP)
+#include <omp.h>
+#elif defined (USE_MPI)
+#include "mpi.h"
+#elif defined (_WIN32)
+#include <Windows.h>
+#else
+#include <sys/time.h>
+#include <stdlib.h>
+#endif
+
+double sharp_wallTime(void)
+  {
+#if defined (_OPENMP)
+  return omp_get_wtime();
+#elif defined (USE_MPI)
+  return MPI_Wtime();
+#elif defined (_WIN32)
+  static double inv_freq = -1.;
+  if (inv_freq<0)
+    {
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+    inv_freq = 1. / double(freq.QuadPart);
+    }
+  LARGE_INTEGER count;
+  QueryPerformanceCounter(&count);
+  return count.QuadPart*inv_freq;
+#else
+  struct timeval t;
+  gettimeofday(&t, NULL);
+  return t.tv_sec + 1e-6*t.tv_usec;
+#endif
+  }

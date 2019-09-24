@@ -16,11 +16,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/*
- *  libsharp is being developed at the Max-Planck-Institut fuer Astrophysik
- *  and financially supported by the Deutsches Zentrum fuer Luft- und Raumfahrt
- *  (DLR).
- */
+/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*  \file sharp_testsuite.c
  *
@@ -30,19 +26,19 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <complex.h>
 #ifdef USE_MPI
 #include "mpi.h"
-#include "sharp_mpi.h"
+#include "libsharp/sharp_mpi.h"
 #endif
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include "sharp.h"
-#include "sharp_internal.h"
-#include "sharp_geomhelpers.h"
-#include "sharp_almhelpers.h"
-#include "c_utils.h"
-#include "memusage.h"
+#include "libsharp/sharp.h"
+#include "libsharp/sharp_geomhelpers.h"
+#include "libsharp/sharp_almhelpers.h"
+#include "libsharp/sharp_utils.h"
+#include "test/memusage.h"
 
 static void OpenMP_status(void)
   {
