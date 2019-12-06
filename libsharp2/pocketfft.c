@@ -13,7 +13,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "pocketfft/pocketfft.h"
+#include "libsharp2/pocketfft.h"
 
 #define RALLOC(type,num) \
   ((type *)malloc((num)*sizeof(type)))
@@ -30,6 +30,8 @@
 #define NOINLINE
 #define WARN_UNUSED_RESULT
 #endif
+
+#pragma GCC visibility push(hidden)
 
 // adapted from https://stackoverflow.com/questions/42792939/
 // CAUTION: this function only works for arguments in the range [-0.25; 0.25]!
@@ -2192,3 +2194,5 @@ int pocketfft_forward_r(pocketfft_plan_r plan, double c[], double fct)
   else // if (plan->blueplan)
     return rfftblue_forward(plan->blueplan,c,fct);
   }
+
+#pragma GCC visibility pop

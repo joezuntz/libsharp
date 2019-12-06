@@ -59,7 +59,7 @@ def get_extension_modules():
 
 setup(name='pysharp',
       version='0.0.1',
-      description='Python bindings for libsharp',
+      description='Python bindings for libsharp2',
       include_package_data=True,
       author='Martin Reinecke',
       author_email='martin@mpa-garching.mpg.de',

@@ -1,4 +1,4 @@
 #!/bin/sh
 
-./sharp_testsuite acctest
+./sharp2_testsuite acctest
 

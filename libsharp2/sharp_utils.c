@@ -1,22 +1,22 @@
 /*
- *  This file is part of libsharp.
+ *  This file is part of libsharp2.
  *
- *  libsharp is free software; you can redistribute it and/or modify
+ *  libsharp2 is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
  *
- *  libsharp is distributed in the hope that it will be useful,
+ *  libsharp2 is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with libsharp; if not, write to the Free Software
+ *  along with libsharp2; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
+/* libsharp2 is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*
  *  Convenience functions
@@ -26,8 +26,9 @@
  */
 
 #include <stdio.h>
-#include "libsharp/sharp_utils.h"
+#include "libsharp2/sharp_utils.h"
 
+#pragma GCC visibility push(hidden)
 void sharp_fail_ (const char *file, int line, const char *func, const char *msg)
   {
   fprintf(stderr,"%s, %i (%s):\n%s\n",file,line,func,msg);
@@ -46,9 +47,11 @@ static size_t manipsize(size_t sz)
   if (((sz+overhead)%critical_stride)>(2*cacheline)) return sz;
   return sz+2*cacheline;
   }
+#pragma GCC visibility pop
 
 #ifdef __SSE__
 #include <xmmintrin.h>
+#pragma GCC visibility push(hidden)
 void *sharp_malloc_ (size_t sz)
   {
   void *res;
@@ -59,7 +62,9 @@ void *sharp_malloc_ (size_t sz)
   }
 void sharp_free_ (void *ptr)
   { if ((ptr)!=NULL) _mm_free(ptr); }
+#pragma GCC visibility pop
 #else
+#pragma GCC visibility push(hidden)
 void *sharp_malloc_ (size_t sz)
   {
   void *res;
@@ -70,6 +75,7 @@ void *sharp_malloc_ (size_t sz)
   }
 void sharp_free_ (void *ptr)
   { if ((ptr)!=NULL) free(ptr); }
+#pragma GCC visibility pop
 #endif
 
 #if defined (_OPENMP)
@@ -83,6 +89,7 @@ void sharp_free_ (void *ptr)
 #include <stdlib.h>
 #endif
 
+#pragma GCC visibility push(hidden)
 double sharp_wallTime(void)
   {
 #if defined (_OPENMP)
@@ -106,3 +113,4 @@ double sharp_wallTime(void)
   return t.tv_sec + 1e-6*t.tv_usec;
 #endif
   }
+#pragma GCC visibility pop

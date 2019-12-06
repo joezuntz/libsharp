@@ -1,4 +1,4 @@
-# Libsharp
+# Libsharp2
 
 Library for efficient spherical harmonic transforms at arbitrary spins,
 supporting CPU vectorization, OpenMP and MPI.
@@ -20,10 +20,10 @@ These improvements reduce the fraction of CPU time spent on evaluating the
 recurrences for Y_lm coefficients, which means that computing multiple
 simultaneous SHTs no longer has a big performance advantage compared to SHTs
 done one after the other.
-As a consequence, libsharp support for simultaneous SHTs was dropped, making
+As a consequence, libsharp's support for simultaneous SHTs was dropped, making
 its interface much simpler.
 
-With the proper compilers and flags (see the file COMPILE for details) libsharp
+With the proper compilers and flags (see the file COMPILE for details) libsharp2
 is now built with support for SSE2, AVX, AVX2, FMA3, FMA4 and AVX512f and the
 appropriate implementation is selected dynamically at runtime. This should
 provide a very significant performance boost for everyone using pre-compiled
