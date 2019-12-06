@@ -9,10 +9,10 @@
 .libs
 **/.deps
 **/.dirstamp
-libsharp-uninstalled.pc
-libsharp-uninstalled.sh
-libsharp.pc
-libsharp.pc.in
+libsharp2-uninstalled.pc
+libsharp2-uninstalled.sh
+libsharp2.pc
+libsharp2.pc.in
 perf.data*
 /auto
 /autom4te.cache

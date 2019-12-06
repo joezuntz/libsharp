@@ -1,6 +1,6 @@
-Libsharp is configured, compiled and installed using GNU autotools.
+Libsharp2 is configured, compiled and installed using GNU autotools.
 
-If you have cloned the libsharp repository, you have to run
+If you have cloned the libsharp2 repository, you have to run
 "autoreconf -i" before starting the configuration, which requires several
 GNU developer tools to be available on your system.
 
@@ -20,8 +20,8 @@ since it allows the compiler to fuse multiplications and additions into FMA
 instructions, which is forbidden by the C99 standard. Since FMAs are a central
 aspect of the algorithm, they are needed for optimum performance.
 
-If you are calling libsharp from other code which requires strict adherence
-to the C99 standard, you should still be able to compile libsharp with
+If you are calling libsharp2 from other code which requires strict adherence
+to the C99 standard, you should still be able to compile libsharp2 with
 "-ffast-math" without any problems.
 
 
@@ -36,7 +36,7 @@ at runtime.
 This is enabled by passing "-DMULTIARCH" as part of the CFLAGS.
 If this is enabled, please do _not_ specify "-march=native" or
 "-mtarget=avx" or similar!
-If you are compiling libsharp for a particular target CPU only, or if you are
+If you are compiling libsharp2 for a particular target CPU only, or if you are
 using a different compiler, however, "-march-native" should be used. The
 resulting binary will most likely not run on other computers, though.
 

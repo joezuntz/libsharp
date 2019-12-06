@@ -1,22 +1,22 @@
 /*
- *  This file is part of libsharp.
+ *  This file is part of libsharp2.
  *
- *  libsharp is free software; you can redistribute it and/or modify
+ *  libsharp2 is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
  *
- *  libsharp is distributed in the hope that it will be useful,
+ *  libsharp2 is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with libsharp; if not, write to the Free Software
+ *  along with libsharp2; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* libsharp is being developed at the Max-Planck-Institut fuer Astrophysik */
+/* libsharp2 is being developed at the Max-Planck-Institut fuer Astrophysik */
 
 /*! \file sharp.h
  *  Portable interface for the spherical transform library.
@@ -169,7 +169,7 @@ void sharp_destroy_geom_info (sharp_geom_info *info);
 
 /*! \} */
 
-/*! \defgroup lowlevelgroup Low-level libsharp SHT interface */
+/*! \defgroup lowlevelgroup Low-level libsharp2 SHT interface */
 /*! \{ */
 
 /*! Enumeration of SHARP job types. */
@@ -197,7 +197,7 @@ typedef enum { SHARP_DP              = 1<<4,
                SHARP_USE_WEIGHTS     = 1<<20,    /* internal use only */
              } sharp_jobflags;
 
-/*! Performs a libsharp SHT job. The interface deliberately does not use
+/*! Performs a libsharp2 SHT job. The interface deliberately does not use
   the C99 "complex" data type, in order to be callable from C89 and C++.
   \param type the type of SHT
   \param spin the spin of the quantities to be transformed
@@ -231,10 +231,10 @@ void sharp_set_nchunks_max(int new_nchunks_max);
 
 
 typedef enum { SHARP_ERROR_NO_MPI = 1,
-               /*!< libsharp not compiled with MPI support */
+               /*!< libsharp2 not compiled with MPI support */
               } sharp_errors;
 
-/*! Works like sharp_execute_mpi, but is always present whether or not libsharp
+/*! Works like sharp_execute_mpi, but is always present whether or not libsharp2
     is compiled with USE_MPI. This is primarily useful for wrapper code etc.
 
     Note that \a pcomm has the type MPI_Comm*, except we declare void* to avoid

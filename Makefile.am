@@ -1,22 +1,22 @@
 ACLOCAL_AMFLAGS = -I m4
 
-lib_LTLIBRARIES = libsharp.la
+lib_LTLIBRARIES = libsharp2.la
 
-libsharp_la_SOURCES = \
-  pocketfft/pocketfft.c \
-  pocketfft/pocketfft.h \
-  libsharp/sharp_utils.c \
-  libsharp/sharp_utils.h \
-  libsharp/sharp.c \
-  libsharp/sharp_almhelpers.c \
-  libsharp/sharp_core.c \
-  libsharp/sharp_geomhelpers.c \
-  libsharp/sharp_legendre_roots.c \
-  libsharp/sharp_ylmgen_c.c \
-  libsharp/sharp_internal.h \
-  libsharp/sharp_legendre_roots.h \
-  libsharp/sharp_vecsupport.h \
-  libsharp/sharp_ylmgen_c.h
+libsharp2_la_SOURCES = \
+  libsharp2/pocketfft.c \
+  libsharp2/pocketfft.h \
+  libsharp2/sharp_utils.c \
+  libsharp2/sharp_utils.h \
+  libsharp2/sharp.c \
+  libsharp2/sharp_almhelpers.c \
+  libsharp2/sharp_core.c \
+  libsharp2/sharp_geomhelpers.c \
+  libsharp2/sharp_legendre_roots.c \
+  libsharp2/sharp_ylmgen_c.c \
+  libsharp2/sharp_internal.h \
+  libsharp2/sharp_legendre_roots.h \
+  libsharp2/sharp_vecsupport.h \
+  libsharp2/sharp_ylmgen_c.h
 
 # format is "current:revision:age"
 # any change: increase revision
@@ -24,17 +24,17 @@ libsharp_la_SOURCES = \
 # any backward-compatible change: increase age
 # any backward-incompatible change: age=0
 # ==> age <= current
-libsharp_la_LDFLAGS = -version-info 0:0:0
+libsharp2_la_LDFLAGS = -version-info 0:0:0
 
 AM_CFLAGS = @AM_CFLAGS@
 
 if HAVE_MULTIARCH
 
-libavx_la_SOURCES = libsharp/sharp_core_inc.c
-libavx2_la_SOURCES = libsharp/sharp_core_inc.c
-libfma_la_SOURCES = libsharp/sharp_core_inc.c
-libfma4_la_SOURCES = libsharp/sharp_core_inc.c
-libavx512f_la_SOURCES = libsharp/sharp_core_inc.c
+libavx_la_SOURCES = libsharp2/sharp_core_inc.c
+libavx2_la_SOURCES = libsharp2/sharp_core_inc.c
+libfma_la_SOURCES = libsharp2/sharp_core_inc.c
+libfma4_la_SOURCES = libsharp2/sharp_core_inc.c
+libavx512f_la_SOURCES = libsharp2/sharp_core_inc.c
 
 noinst_LTLIBRARIES = libavx.la libavx2.la libfma.la libfma4.la libavx512f.la
 
@@ -44,23 +44,23 @@ libfma_la_CFLAGS = ${AM_CFLAGS} -mfma -DARCH=fma
 libfma4_la_CFLAGS = ${AM_CFLAGS} -mfma4 -DARCH=fma4
 libavx512f_la_CFLAGS = ${AM_CFLAGS} -mavx512f -DARCH=avx512f
 
-libsharp_la_LIBADD = libavx.la libavx2.la libfma.la libfma4.la libavx512f.la
+libsharp2_la_LIBADD = libavx.la libavx2.la libfma.la libfma4.la libavx512f.la
 
 endif
 
 nobase_include_HEADERS = \
-  libsharp/sharp.h \
-  libsharp/sharp_mpi.h \
-  libsharp/sharp_geomhelpers.h \
-  libsharp/sharp_almhelpers.h \
-  libsharp/sharp_cxx.h
+  libsharp2/sharp.h \
+  libsharp2/sharp_mpi.h \
+  libsharp2/sharp_geomhelpers.h \
+  libsharp2/sharp_almhelpers.h \
+  libsharp2/sharp_cxx.h
 
 EXTRA_DIST = \
-  runtest.sh fortran/sharp.f90 fortran/test_sharp.f90 libsharp/sharp_mpi.c
+  runtest.sh fortran/sharp.f90 fortran/test_sharp.f90 libsharp2/sharp_mpi.c
 
-check_PROGRAMS = sharp_testsuite
-sharp_testsuite_SOURCES = test/sharp_testsuite.c test/memusage.c test/memusage.h
-sharp_testsuite_LDADD = libsharp.la -lm
+check_PROGRAMS = sharp2_testsuite
+sharp2_testsuite_SOURCES = test/sharp2_testsuite.c test/memusage.c test/memusage.h
+sharp2_testsuite_LDADD = libsharp2.la -lm
 
 TESTS = runtest.sh
 
