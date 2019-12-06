@@ -60,7 +60,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = sharp2_testsuite
 sharp2_testsuite_SOURCES = test/sharp2_testsuite.c test/memusage.c test/memusage.h
-sharp2_testsuite_LDADD = libsharp2.la -lm
+sharp2_testsuite_LDADD = libsharp2.la
 
 TESTS = runtest.sh
 
