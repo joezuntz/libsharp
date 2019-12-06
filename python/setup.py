@@ -52,7 +52,7 @@ def get_extension_modules():
                       sources=['pysharp.cc'],
                       include_dirs=include_dirs,
                       extra_compile_args=extra_cc_compile_args,
-                      libraries=["sharp"],
+                      libraries=["sharp2"],
                       library_dirs=[sharp_libpath],
                       extra_link_args=python_module_link_args)]
 
