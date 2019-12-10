@@ -480,42 +480,55 @@ static void check_sign_scale(void)
 static void do_sht (sharp_geom_info *ginfo, sharp_alm_info *ainfo,
   int spin, double **err_abs, double **err_rel,
   double *t_a2m, double *t_m2a, unsigned long long *op_a2m,
-  unsigned long long *op_m2a)
+  unsigned long long *op_m2a, size_t ntrans)
   {
   ptrdiff_t nalms = get_nalms(ainfo);
   int ncomp = (spin==0) ? 1 : 2;
 
   size_t npix = get_npix(ginfo);
   double **map;
-  ALLOC2D(map,double,ncomp,npix);
-  for (int i=0; i<ncomp; ++i)
+  ALLOC2D(map,double,ncomp*ntrans,npix);
+  for (int i=0; i<ncomp*ntrans; ++i)
     SET_ARRAY(map[i],0,(int)npix,0);
 
   dcmplx **alm;
-  ALLOC2D(alm,dcmplx,ncomp,nalms);
-  for (int i=0; i<ncomp; ++i)
+  ALLOC2D(alm,dcmplx,ncomp*ntrans,nalms);
+  for (int i=0; i<ncomp*ntrans; ++i)
     random_alm(alm[i],ainfo,spin,i+1);
 
+  double tta2m, ttm2a;
+  unsigned long long toa2m, tom2a;
+
+  if (t_a2m!=NULL) *t_a2m=0;
+  if (op_a2m!=NULL) *op_a2m=0;
+  for (size_t itrans=0; itrans<ntrans; ++itrans)
+    {
 #ifdef USE_MPI
-  sharp_execute_mpi(MPI_COMM_WORLD,SHARP_ALM2MAP,spin,&alm[0],&map[0],ginfo,
-    ainfo, SHARP_DP|SHARP_ADD,t_a2m,op_a2m);
+    sharp_execute_mpi(MPI_COMM_WORLD,SHARP_ALM2MAP,spin,&alm[itrans*ncomp],
+      &map[itrans*ncomp],ginfo,ainfo, SHARP_DP|SHARP_ADD,&tta2m,&toa2m);
 #else
-  sharp_execute(SHARP_ALM2MAP,spin,&alm[0],&map[0],ginfo,ainfo,
-    SHARP_DP,t_a2m,op_a2m);
+    sharp_execute(SHARP_ALM2MAP,spin,&alm[itrans*ncomp],&map[itrans*ncomp],ginfo,ainfo,
+      SHARP_DP,&tta2m,&toa2m);
 #endif
-  if (t_a2m!=NULL) *t_a2m=maxTime(*t_a2m);
-  if (op_a2m!=NULL) *op_a2m=totalops(*op_a2m);
-  double *sqsum=get_sqsum_and_invert(alm,nalms,ncomp);
+    if (t_a2m!=NULL) *t_a2m+=maxTime(tta2m);
+    if (op_a2m!=NULL) *op_a2m+=totalops(toa2m);
+    }
+  double *sqsum=get_sqsum_and_invert(alm,nalms,ntrans*ncomp);
+  if (t_m2a!=NULL) *t_m2a=0;
+  if (op_m2a!=NULL) *op_m2a=0;
+  for (size_t itrans=0; itrans<ntrans; ++itrans)
+    {
 #ifdef USE_MPI
-  sharp_execute_mpi(MPI_COMM_WORLD,SHARP_MAP2ALM,spin,&alm[0],&map[0],ginfo,
-    ainfo,SHARP_DP|SHARP_ADD,t_m2a,op_m2a);
+    sharp_execute_mpi(MPI_COMM_WORLD,SHARP_MAP2ALM,spin,&alm[itrans*ncomp],&map[itrans*ncomp],ginfo,
+      ainfo,SHARP_DP|SHARP_ADD,&ttm2a,op_&tom2a);
 #else
-  sharp_execute(SHARP_MAP2ALM,spin,&alm[0],&map[0],ginfo,ainfo,
-    SHARP_DP|SHARP_ADD,t_m2a,op_m2a);
+    sharp_execute(SHARP_MAP2ALM,spin,&alm[itrans*ncomp],&map[itrans*ncomp],ginfo,ainfo,
+      SHARP_DP|SHARP_ADD,&ttm2a,&tom2a);
 #endif
-  if (t_m2a!=NULL) *t_m2a=maxTime(*t_m2a);
-  if (op_m2a!=NULL) *op_m2a=totalops(*op_m2a);
-  get_errors(alm, nalms, ncomp, sqsum, err_abs, err_rel);
+    if (t_m2a!=NULL) *t_m2a+=maxTime(ttm2a);
+    if (op_m2a!=NULL) *op_m2a+=totalops(tom2a);
+    }
+  get_errors(alm, nalms, ntrans*ncomp, sqsum, err_abs, err_rel);
 
   DEALLOC(sqsum);
   DEALLOC2D(map);
@@ -528,7 +541,7 @@ static void check_accuracy (sharp_geom_info *ginfo, sharp_alm_info *ainfo,
   int ncomp = (spin==0) ? 1 : 2;
   double *err_abs, *err_rel;
   do_sht (ginfo, ainfo, spin, &err_abs, &err_rel, NULL, NULL,
-    NULL, NULL);
+    NULL, NULL, 1);
   for (int i=0; i<ncomp; ++i)
     UTIL_ASSERT((err_rel[i]<1e-10) && (err_abs[i]<1e-10),"error");
   DEALLOC(err_rel);
@@ -570,15 +583,18 @@ static void sharp_acctest(void)
 static void sharp_test (int argc, const char **argv)
   {
   if (mytask==0) sharp_announce("sharp_test");
-  UTIL_ASSERT(argc>=8,"usage: grid lmax mmax geom1 geom2 spin");
+  UTIL_ASSERT(argc>=8,"usage: grid lmax mmax geom1 geom2 spin [ntrans]");
   int lmax=atoi(argv[3]);
   int mmax=atoi(argv[4]);
   int gpar1=atoi(argv[5]);
   int gpar2=atoi(argv[6]);
   int spin=atoi(argv[7]);
+  int ntrans=1;
+  if (argc>=9) ntrans=atoi(argv[8]);
 
   if (mytask==0) printf("Testing map analysis accuracy.\n");
   if (mytask==0) printf("spin=%d\n", spin);
+  if (mytask==0) printf("ntrans=%d\n", ntrans);
 
   sharp_geom_info *ginfo;
   sharp_alm_info *ainfo;
@@ -596,7 +612,7 @@ static void sharp_test (int argc, const char **argv)
     ++nrpt;
     double ta2m2, tm2a2;
     do_sht (ginfo, ainfo, spin, &err_abs, &err_rel, &ta2m2, &tm2a2,
-      &op_a2m, &op_m2a);
+      &op_a2m, &op_m2a, ntrans);
     if (ta2m2<t_a2m) t_a2m=ta2m2;
     if (tm2a2<t_m2a) t_m2a=tm2a2;
     t_acc+=t_a2m+t_m2a;
@@ -615,10 +631,10 @@ static void sharp_test (int argc, const char **argv)
   if (mytask==0) printf("Performance: %fGFLOPs/s\n",1e-9*op_m2a/t_m2a);
 
   if (mytask==0)
-    for (int i=0; i<ncomp; ++i)
+    for (int i=0; i<ntrans*ncomp; ++i)
       printf("component %i: rms %e, maxerr %e\n",i,err_rel[i], err_abs[i]);
 
-  double iosize = ncomp*(16.*get_nalms(ainfo) + 8.*get_npix(ginfo));
+  double iosize = ntrans*ncomp*(16.*get_nalms(ainfo) + 8.*get_npix(ginfo));
   iosize = allreduceSumDouble(iosize);
 
   sharp_destroy_alm_info(ainfo);
