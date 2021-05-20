@@ -1,3 +1,13 @@
+NOTICE
+======
+
+Active development of this package has stopped. The package will receive bug fixes
+if necessary, but otherwise the code has been integrated into the `ducc0`
+package (https://gitlab.mpcdf.mpg.de/mtr/ducc), and further development is
+taking place there.
+
+Please prefer `ducc0` over `libsharp2` if you are starting a new project!
+
 # Libsharp2
 
 Library for efficient spherical harmonic transforms at arbitrary spins,
