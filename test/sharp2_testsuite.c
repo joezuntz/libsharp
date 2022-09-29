@@ -520,7 +520,7 @@ static void do_sht (sharp_geom_info *ginfo, sharp_alm_info *ainfo,
     {
 #ifdef USE_MPI
     sharp_execute_mpi(MPI_COMM_WORLD,SHARP_MAP2ALM,spin,&alm[itrans*ncomp],&map[itrans*ncomp],ginfo,
-      ainfo,SHARP_DP|SHARP_ADD,&ttm2a,op_&tom2a);
+      ainfo,SHARP_DP|SHARP_ADD,&ttm2a,&tom2a);
 #else
     sharp_execute(SHARP_MAP2ALM,spin,&alm[itrans*ncomp],&map[itrans*ncomp],ginfo,ainfo,
       SHARP_DP|SHARP_ADD,&ttm2a,&tom2a);
